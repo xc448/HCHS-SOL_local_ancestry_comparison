@@ -4,15 +4,18 @@ index <- as.numeric(args[1])
 require(gdsfmt)
 require(tidyverse)
 
-# open the GDS file created from the FLARE3 ancestry mapping for the specified chromosome 
-g <- openfn.gds(paste0("/home/ec2-user/EBS4T/Projects/2023_local_ancestry_comparison/FLARE3/FLARE3_ancestry_counts_chr",
-index, ".gds"))
+
+# open the GDS file created from the FLARE ancestry mapping 
+g <- openfn.gds("/home/ec2-user/EBS4T/Projects/2023_local_ancestry_comparison/FLARE7/ancestry_counts_FLARE7.gds")
+
+chrnode <- index.gdsn(g, "snp.chromosome") # getting the chromosome information 
+chrinfo <- as.data.frame(read.gdsn(chrnode)) %>% 
+  rename(chr = `read.gdsn(chrnode)`) 
 
 sampleid_FALRE <- as.data.frame(read.gdsn(index.gdsn(g, "sample.id")))
 colnames(sampleid_FALRE) <- "FLARE_ID" 
 sampleid_FALRE$FLARE_ID <- paste0("SoL", sampleid_FALRE$FLARE_ID)
 rownames(sampleid_FALRE) <- sampleid_FALRE[,1]
-
 
 # open the GDS file from local old ancestry inference - RFMix inference 
 gdsold <- openfn.gds("/home/ec2-user/EBS4T/Projects/2023_local_ancestry_comparison/UW_GAC/lai_HGDP_1000G_comb_unique.gds") 
@@ -23,19 +26,25 @@ colnames(intervals_liftover_nodup) <- c("chr", "pos_start", "pos_end", "snpid")
 
 print(paste0("working on ", index))
 
-# Subset the intervals by chromosome
+# Subsetting the intervals by chromosome
 interval_old_lift_subset <- intervals_liftover_nodup %>% 
   dplyr::filter(chr == paste0("chr", index)) 
+# if chr==22, there will be 254 individuals
 
 rownames(interval_old_lift_subset) <- interval_old_lift_subset$snpid
 
+# Need to know where the starting/ending SNP is of this chromosome -- in FLARE7
+startind <- min(which(chrinfo$chr == index)) # starting to read ancestry counts 
+# from this index
+endind <- max(which(chrinfo$chr == index))
+
 # reading SNP position (exact) file from the GDS node
 snpnode <- index.gdsn(g, "snp.position")
-snps_flare <- as.data.frame(read.gdsn(snpnode))
-snps_flare$snpid <- read.gdsn(index.gdsn(g, "snp.id"))
+snps_flare <- as.data.frame(read.gdsn(snpnode, start = c(startind), 
+                                      count = c(endind-startind+1)))
+snps_flare$snpid <- seq(startind, endind)
 colnames(snps_flare) <- c("snppos", "flare_snpid")
 
-# Since FLARE3 gds file is done by chromosome, no need for indexing start and end position 
 snp_interval_mapped <- c()
 for(j in 1:nrow(interval_old_lift_subset)){
   indices <- which(snps_flare$snppos >= interval_old_lift_subset$pos_start[j] 
@@ -51,13 +60,13 @@ for(j in 1:nrow(interval_old_lift_subset)){
   snp_interval_mapped <- rbind(snp_interval_mapped, tmp)
 }
 snp_interval_mapped <- as.data.frame(snp_interval_mapped)
-          
 
-# Compute the proportion of SNPs mapped onto the old (RFMix) intervals
+
+# Compute the proportion of SNPs mapped onto the old (RFMix) intervals 
 print(nrow(snp_interval_mapped) / nrow(snps_flare)) 
 
 readoldcounts <- function(ancestry){
-  #Extract ancestry counts from the Old gds file (all counts from 15500 intervals)
+#Extract ancestry counts from the Old gds file (all counts from 15500 intervals)
   anc <- paste0("dosage_", ancestry)
   old_node <-  index.gdsn(gdsold, anc)
   old_counts <- as.data.frame(read.gdsn(old_node))
@@ -65,16 +74,17 @@ readoldcounts <- function(ancestry){
   return(old_counts)
 }
 
-# take ancestry counts from the FLARE3 GDS file
+# take ancestry counts from the FLARE7 GDS file
 
 readflarecounts <- function(ancestry){
   anc <- paste0(ancestry, "_counts")
   node <- index.gdsn(g, anc)
-  counts <- as.data.frame(read.gdsn(node))
-  colnames(counts) <- snps_flare$flare_snpid
+  counts <- as.data.frame(read.gdsn(node, start = c(1,startind),
+                                    count = c(-1, endind-startind+1)))
+  colnames(counts) <- startind:endind
   counts <- counts[ ,as.character(snp_interval_mapped$FLARE_snpid)]
   return(counts)
-}      
+}
 
 # Read ancestral blocks from RFMix dataset
 afr_old_counts_all <- readoldcounts("afr")
@@ -86,7 +96,7 @@ amer_old_counts_subset <- amer_old_counts_all[, unique(snp_interval_mapped$old_s
 eur_old_counts_all <- readoldcounts("eur")
 eur_old_counts_subset <- eur_old_counts_all[, unique(snp_interval_mapped$old_snpid)]
 
-# Read ancestral counts from FLARE3 dataset
+# Read ancestral counts from FLARE7 dataset
 afr_flare_counts_subset <- readflarecounts("afr")
 amer_flare_counts_subset <- readflarecounts("amer")
 eur_flare_counts_subset <- readflarecounts("eur")
@@ -94,7 +104,7 @@ eur_flare_counts_subset <- readflarecounts("eur")
 closefn.gds(g)
 closefn.gds(gdsold)
 
-# loading the overlapped ID for FLARE3
+# loading the overlapped ID for FLARE7
 overlap_id <- read.csv("/home/ec2-user/EBS4T/Projects/2023_local_ancestry_comparison/UW_GAC/old_new_overlap_ind.csv")[,2]
 # loading the overlapped ID for RFMix(old) inference
 merged_sample_old_clean <- read.csv("/home/ec2-user/EBS4T/Projects/2023_local_ancestry_comparison/UW_GAC/merged_sample_old.csv")
@@ -133,8 +143,8 @@ prop <- function(x){
   mean(x)/2
 }
 
-# Define a function computing the ancestry proportion variance / ancestry at 
-# each SNP position across all individuals 
+# Define a function computing the ancestry proportion variance / ancestry 
+#at each SNP position across all individuals 
 newvar <- function(x){
   var(x/2)
 }
@@ -152,14 +162,14 @@ for(i in colnames(mapped_afr_counts_old)){
   counts_flare_afr <- mapped_afr_counts_FLARE[,as.character(snp_interval_mapped$FLARE_snpid[ind])]
   counts_flare_amer <- mapped_amer_counts_FLARE[,as.character(snp_interval_mapped$FLARE_snpid[ind])]
   counts_flare_eur <- mapped_eur_counts_FLARE[,as.character(snp_interval_mapped$FLARE_snpid[ind])]
-  
+
   corr_afr_p <- as.data.frame(cor(counts_flare_afr, counts_old_afr, method = "pearson"))[, 1]
   corr_afr_s <- as.data.frame(cor(counts_flare_afr, counts_old_afr, method = "spearman"))[, 1]
   corr_amer_p <- as.data.frame(cor(counts_flare_amer, counts_old_amer, method = "pearson"))[, 1]
   corr_amer_s <- as.data.frame(cor(counts_flare_amer, counts_old_amer, method = "spearman"))[, 1]
   corr_eur_p <- as.data.frame(cor(counts_flare_eur, counts_old_eur, method = "pearson"))[, 1]
   corr_eur_s <- as.data.frame(cor(counts_flare_eur, counts_old_eur, method = "spearman"))[, 1]
-  
+
   rowi <- cbind(Chromosome = rep(index, length(ind)), 
                 Position = snp_interval_mapped$FLARE_snppos[ind], 
                 Corr_afr_p = corr_afr_p,
@@ -180,12 +190,11 @@ for(i in colnames(mapped_afr_counts_old)){
                 Var_amer_new = apply(as.data.frame(counts_flare_amer), 2, newvar),
                 Var_eur_old = var(counts_old_eur/2),
                 Var_eur_new = apply(as.data.frame(counts_flare_eur), 2, newvar)
-  )
+                )
   corr_result <- rbind(corr_result, rowi)
   
 }
 
 corr_result <- as.data.frame(corr_result)
 
-# customize file name to generate separate output files by ancestries
 save(corr_result, file = paste0("/home/ec2-user/EBS4T/Projects/2023_local_ancestry_comparison/Correlation/corr_old_flare3_chr", index, ".Rdata"))
