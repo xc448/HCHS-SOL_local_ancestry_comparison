@@ -1,0 +1,149 @@
+---
+title: "20240723_metab_admixture_assoc_FLARE3_Plots"
+output: html_document
+date: "2024-07-23"
+---
+
+```{r setup, include=FALSE, fig.width=16}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(cowplot) # for stacking plots 
+library(ggplot2)
+library(gridExtra)
+library(tidyverse)
+library(reshape2)
+library(lattice)
+library(grid)
+library(gridExtra)
+library(gridtext)
+```
+
+```{r}
+# Load the liftOver files for interval info in the RFMix
+intervals_liftover_nodup <- read.table("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/intervals_37-38.bed")
+
+colnames(intervals_liftover_nodup) <- c("chr", "pos_start", "pos_end", "snpid") 
+intervals_liftover_nodup <- intervals_liftover_nodup |> filter(chr != "chrX") # 14753 mapped blocks
+
+```
+
+
+# Metabolite 3-aminoaceyltate - X1114, for both African and Amerindian ancestry
+```{r}
+plot_overlay_pval <- function(metab, batch, ancestry, chr){
+  # Load the RFMix admixmap results 
+  res_RFMix <- readRDS(paste0("./admix_map_all/RFMix_res_", ancestry,
+  "_", metab, "_b", batch, ".rds"))
+  res_RFMix_plot <- cbind(intervals_liftover_nodup$chr, 
+                          intervals_liftover_nodup$pos_start,
+                          intervals_liftover_nodup$pos_end,
+                          res_RFMix[order(as.numeric(rownames(res_RFMix))),])
+  colnames(res_RFMix_plot)[1:3] <- c("chr", "pos.start", "pos.end")
+  res_RFMix_plot_long <- pivot_longer(res_RFMix_plot, 
+                                           cols = c("pos.start", "pos.end"), 
+                                           names_to = "poscat", values_to = "pos")
+  # Load the FLAREs3 admixmap results
+  load(paste0("./admix_map_all/admixmap_", metab, "_all_FLARE3/admix", ancestry,
+              "_b", batch, "_filtered_chr", chr, ".Rdata"))
+  
+  # Start plotting
+  # determine colors based on the ancestry given in the argument
+  if(ancestry == "afr"){
+    colors <- c("FLARE3" = "#AADCA9", "RFMix" = "#24500F")
+    legend_name <- "African Ancestry"
+  }else{
+    colors <- c("FLARE3" = "#ffb38a", "RFMix" = "#854900")
+    legend_name <- "Amerindian Ancestry"
+  }
+  chrnum <- paste0("chr", chr)
+  overlay_plot <- res_RFMix_plot_long |>
+    filter(chr == chrnum)|> 
+    ggplot(aes(x = pos, y = -log(Score.pval, 10), col = "RFMix")) +
+    geom_point(data = res, aes(x = snppos, y =  -log(Score.pval, 10), 
+                               col = "FLARE3"), 
+               size = 0.6, alpha = 0.3) +
+    geom_line(linewidth = 0.3) +
+    labs(x = "") +
+    scale_color_manual(values = colors,
+                     name = legend_name) +
+    theme_minimal()+
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position = "top") +
+    guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.8))) 
+  return(overlay_plot)
+}
+```
+
+# Use this function below to combine plots from different ancestries and batches
+
+```{r}
+# Combine batch 1 and batch 2 for both ancestries in an Miami plot
+combine_plots  <- function(gafr_b1, gafr_b2, gamer_b1, gamer_b2,  title){
+  gafr_b1 <- gafr_b1 + 
+    theme(plot.margin = unit(c(0, 0.2, -2, 0.2), "lines"))
+  
+  gafr_b2 <- gafr_b2 + 
+    theme(axis.text.x =element_blank(),
+          plot.margin = unit(c(1, 0.2, 0, 0.2), "lines")) +
+    theme(legend.position = "none")+
+    scale_y_reverse()
+  
+  gamer_b1 <- gamer_b1 + 
+    theme(plot.margin = unit(c(0, 0.2, -2, 0.2), "lines"))
+  
+  gamer_b2 <- gamer_b2 + 
+    theme(axis.text.x =element_blank(),
+          plot.margin = unit(c(1, 0.2, 0, 0.2), "lines")) +
+    theme(legend.position = "none")+
+    scale_y_reverse()
+  
+  # append the plots all together 
+  grid.newpage()
+  pushViewport(viewport(layout = grid.layout(2, 1, heights = unit(c(1.5, 8.5), "null"))))
+  
+  # Add the title
+  grid.text(title, y = unit(1, "npc") - unit(1.5, "lines"), 
+            gp = gpar(fontsize = 12, fontface = "bold"))
+  
+  # Add the combined plot
+  pushViewport(viewport(layout.pos.row = 2, layout.pos.col = 1))
+  grid.draw(cbind(rbind(ggplotGrob(gafr_b1),  ggplotGrob(gafr_b2)), 
+                  rbind(ggplotGrob(gamer_b1),  ggplotGrob(gamer_b2)), 
+                  size = "last"))
+}
+```
+
+```{r}
+combine_plots(plot_overlay_pval("x1114", 1, "afr", 5), 
+              plot_overlay_pval("x1114", 2, "afr", 5),
+              plot_overlay_pval("x1114", 1, "amer", 5),
+              plot_overlay_pval("x1114", 2, "amer", 5),
+              "3-Aminoisobutyrate Chr5")
+```
+
+```{r}
+combine_plots(plot_overlay_pval("x1266", 1, "afr", 2), 
+              plot_overlay_pval("x1266", 2, "afr", 2),
+              plot_overlay_pval("x1266", 1, "amer", 2),
+              plot_overlay_pval("x1266", 2, "amer", 2),
+              "N-acetylarginine Chr2")
+```
+
+```{r}
+combine_plots(plot_overlay_pval("x8990", 1, "afr", 15), 
+              plot_overlay_pval("x8990", 2, "afr", 15),
+              plot_overlay_pval("x8990", 1, "amer", 15),
+              plot_overlay_pval("x8990", 2, "amer", 15),
+              "PE 16:0/20:4 Chr15")
+```
+
+```{r}
+combine_plots(plot_overlay_pval("x8914", 1, "afr", 11), 
+              plot_overlay_pval("x8914", 2, "afr", 11),
+              plot_overlay_pval("x8914", 1, "amer", 11),
+              plot_overlay_pval("x8914", 2, "amer", 11),
+              "PC 16:0/20:4 Chr11")
+```
+
