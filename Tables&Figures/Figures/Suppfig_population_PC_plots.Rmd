@@ -1,0 +1,183 @@
+---
+title: "20240705_PC_plots"
+author: "Xueying Chen"
+date: "2024-07-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Code/")
+```
+
+## Load libraries
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(viridis)
+library(gridExtra)
+library(gridtext)
+```
+
+
+## Load data
+check overlapping IDs for FLARE files and RFMix files, removing rows with NAs in 
+the PC values (complete case analysis)
+```{r}
+path_new <- "/Volumes/Sofer Lab/HCHS_SOL/2023_FLARE_7pop" # Mac
+#path_new <- "R:\\Sofer Lab\\HCHS_SOL\\2023_FLARE_7pop" # Windows
+setwd(path_new)
+
+id_new <- read.delim("SOL.id.txt", header = FALSE) |> rename("ID" = "V1")
+
+path_old <- "/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_local_ancestries"
+#path_old <- "R:\\Sofer Lab\\HCHS_SOL\\Ancestry_files\\UW_GAC_DMDA_20180516_local_ancestries"
+setwd(path_old)
+
+sample_info <- read.csv("subject_annotation_2017-09-05.csv")
+id_old  <-  sample_info[!is.na(sample_info$EV1),] # remove NAs
+overlap_id <- inner_join(id_old, id_new, by = c("SUBJECT_ID" = "ID")) 
+
+sum(!is.na(match(id_new$ID, id_old$SUBJECT_ID))) # n = 11863
+```
+
+# Read the global ancestry info from RFMix, FLARE3, and FLARE7
+```{r}
+# Load global proportion data
+old_proportion <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/global_proportion_old.csv")
+
+flare7_proportion <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_global_prop_QC_tot.rds")
+flare7_proportion$SUBJECT_ID <- id_new$ID
+
+glob_prop <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_global_prop_QC_tot.rds")
+
+# join PC and global proportion info
+# there should be 11863 rows
+old_plot_combined  <- overlap_id |> dplyr::select(SUBJECT_ID, EV1, EV2, EV3,
+                                                   EV4,  EV5) |>
+  inner_join(old_proportion, by = "SUBJECT_ID")
+
+# FLARE7
+flare7_plot_combined  <- overlap_id |> dplyr::select(SUBJECT_ID, EV1, EV2, EV3,
+                                                   EV4,  EV5) |>
+  inner_join(flare7_proportion, by = "SUBJECT_ID")
+
+# FLARE3
+glob_prop <- glob_prop |> mutate(id = id_new$ID)
+flare3_plot_combined <- overlap_id |> dplyr::select(SUBJECT_ID, EV1, EV2, EV3,
+                                                   EV4,  EV5) |>
+  inner_join(glob_prop, by = c("SUBJECT_ID" = "id"))
+```
+
+
+## PC plots -- take the first two PCs and plot against each other, colored by
+the proportion of global ancestries in each individual
+```{r}
+plots <- list()
+
+tmp_afr <- as.data.frame(cbind(x = old_plot_combined$EV1, 
+                               y = old_plot_combined$EV2,
+                           color  = old_plot_combined$mean_afr))
+tmp_amer <- as.data.frame(cbind(x = old_plot_combined$EV1, 
+                                y = old_plot_combined$EV2,
+                           color  = old_plot_combined$mean_amer))
+tmp_eur <- as.data.frame(cbind(x = old_plot_combined$EV1, 
+                               y = old_plot_combined$EV2,
+                           color  = old_plot_combined$mean_eur))
+
+# Function to extract the legend from a ggplot
+get_legend <- function(myplot) {
+  tmp <- ggplot_gtable(ggplot_build(myplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+
+# Plot RFMix PC plots
+plot_old <- function(tmp){
+  ggplot(data = tmp, aes(x = x, y = y) )+
+  geom_point(aes(color = color))+
+  labs(x = "PC1", y = "PC2", color = "Global Ancestry Proportion")+ 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        legend.position = "top")+
+  scale_color_viridis(option="mako")
+    }
+
+# append plots generated from RFMix first in the first row 
+plots[[1]] <- plot_old(tmp_afr)
+plots[[2]] <- plot_old(tmp_amer)
+plots[[3]] <- plot_old(tmp_eur)
+
+# ancestry takes column names abbs. like afr, eur, or amer...
+plot_flare3 <- function(ancestry){ 
+  tmp <- cbind(x = flare3_plot_combined$EV1, y = flare3_plot_combined$EV2,
+               color = flare3_plot_combined[,ancestry])
+  g <- ggplot(data = tmp, aes(x = x, y = y) )+
+  geom_point(aes(color = color))+
+  labs(x = "PC1", y = "PC2", color = "Global Ancestry Proportion")+ 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        legend.position = "top")+
+  scale_color_viridis(option="mako") 
+  return(g)
+}
+
+# append plots generated from FLARE3 in the second row 
+plots[[4]] <-  plot_flare3("afr")
+plots[[5]] <-  plot_flare3("amer")
+plots[[6]] <-  plot_flare3("eur")
+
+# ancestry takes column names abbs. like afr, eur, or amer...
+plot_flare7 <- function(ancestry){ 
+  tmp <- cbind(x = flare7_plot_combined$EV1, y = flare7_plot_combined$EV2,
+               color = flare7_plot_combined[,ancestry])
+  g <- ggplot(data = tmp, aes(x = x, y = y) )+
+  geom_point(aes(color = color))+
+  labs(x = "PC1", y = "PC2", color = "Global Ancestry Proportion")+ 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6),
+        axis.text.y = element_text(size = 6),
+        axis.title.x = element_text(size = 9),
+        axis.title.y = element_text(size = 9),
+        legend.position = "top")+
+  scale_color_viridis(option="mako") 
+  return(g)
+}
+
+# append plots generated from FLARE7 in the third row 
+plots[[7]] <-  plot_flare7("afr")
+plots[[8]] <-  plot_flare7("amer")
+plots[[9]] <-  plot_flare7("eur")
+
+legend <- get_legend(plots[[1]]) # extract a legend for future use
+plots <- lapply(plots, function(plot) plot + theme(legend.position = "none"))
+# clear all legends for all plots 
+
+# Create the labels as grobs
+bottom_labels <- arrangeGrob(
+  textGrob("African", gp = gpar(fontsize = 12), hjust = 0.25),
+  textGrob("Amerindian", gp = gpar(fontsize = 12), hjust = 0.25),
+  textGrob("European", gp = gpar(fontsize = 12), hjust = 0.25),
+  ncol = 3
+)
+right_label <- textGrob("FLARE3                             FLARE7                                        RFMix ", rot = 90, hjust = 0.5, gp = gpar(fontsize = 12))
+
+arranged_pca_plots <- arrangeGrob(grobs = plots, ncol = 3)
+
+# Combine the legend and the plots with the centered labels and legend for coloring
+grid.newpage()
+grid.draw(arrangeGrob(legend, arranged_pca_plots, bottom_labels, ncol = 1, heights = c(1, 20, 1)))
+grid.text("         FLARE7                     FLARE3                        RFMix", x = unit(1, "npc") - unit(0.34, "lines") , y = unit(0.5, "npc"), rot = 90, gp = gpar(fontsize = 10))
+
+```
+
+
+
+

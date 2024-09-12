@@ -1,7 +1,7 @@
 ---
-title: "20240723_metab_admixture_assoc_FLARE3_Plots"
+title: "20240707_metab_admixture_assoc_FLARE7_plots"
 output: html_document
-date: "2024-07-23"
+date: "2024-07-07"
 ---
 
 ```{r setup, include=FALSE, fig.width=16}
@@ -9,7 +9,6 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r}
-library(cowplot) # for stacking plots 
 library(ggplot2)
 library(gridExtra)
 library(tidyverse)
@@ -22,6 +21,8 @@ library(gridtext)
 
 ```{r}
 # Load the liftOver files for interval info in the RFMix
+intervals_liftover_nodup <- read.table("R:\\Sofer Lab\\HCHS_SOL\\Projects\\2023_local_ancestry_comparison_sol\\Data\\intervals_37-38.bed")
+
 intervals_liftover_nodup <- read.table("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/intervals_37-38.bed")
 
 colnames(intervals_liftover_nodup) <- c("chr", "pos_start", "pos_end", "snpid") 
@@ -44,17 +45,17 @@ plot_overlay_pval <- function(metab, batch, ancestry, chr){
   res_RFMix_plot_long <- pivot_longer(res_RFMix_plot, 
                                            cols = c("pos.start", "pos.end"), 
                                            names_to = "poscat", values_to = "pos")
-  # Load the FLAREs3 admixmap results
-  load(paste0("./admix_map_all/admixmap_", metab, "_all_FLARE3/admix", ancestry,
+  # Load the FLARE7 admixmap results
+  load(paste0("./admix_map_all/admixmap_", metab, "_all_FLARE7/admix", ancestry,
               "_b", batch, "_filtered_chr", chr, ".Rdata"))
   
   # Start plotting
   # determine colors based on the ancestry given in the argument
   if(ancestry == "afr"){
-    colors <- c("FLARE3" = "#AADCA9", "RFMix" = "#24500F")
+    colors <- c("FLARE7" = "#AADCA9", "RFMix" = "#24500F")
     legend_name <- "African Ancestry"
   }else{
-    colors <- c("FLARE3" = "#ffb38a", "RFMix" = "#854900")
+    colors <- c("FLARE7" = "#ffb38a", "RFMix" = "#854900")
     legend_name <- "Amerindian Ancestry"
   }
   chrnum <- paste0("chr", chr)
@@ -62,7 +63,7 @@ plot_overlay_pval <- function(metab, batch, ancestry, chr){
     filter(chr == chrnum)|> 
     ggplot(aes(x = pos, y = -log(Score.pval, 10), col = "RFMix")) +
     geom_point(data = res, aes(x = snppos, y =  -log(Score.pval, 10), 
-                               col = "FLARE3"), 
+                               col = "FLARE7"), 
                size = 0.6, alpha = 0.3) +
     geom_line(linewidth = 0.3) +
     labs(x = "") +
@@ -71,13 +72,12 @@ plot_overlay_pval <- function(metab, batch, ancestry, chr){
     theme_minimal()+
     theme(plot.title = element_text(hjust = 0.5),
           legend.position = "top") +
-    guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.8))) 
+    guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) 
   return(overlay_plot)
 }
 ```
 
 # Use this function below to combine plots from different ancestries and batches
-
 ```{r}
 # Combine batch 1 and batch 2 for both ancestries in an Miami plot
 combine_plots  <- function(gafr_b1, gafr_b2, gamer_b1, gamer_b2,  title){
@@ -115,6 +115,7 @@ combine_plots  <- function(gafr_b1, gafr_b2, gamer_b1, gamer_b2,  title){
 }
 ```
 
+Generate plots for 3-Aminoisobutyrate at chromosome 5, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x1114", 1, "afr", 5), 
               plot_overlay_pval("x1114", 2, "afr", 5),
@@ -123,6 +124,7 @@ combine_plots(plot_overlay_pval("x1114", 1, "afr", 5),
               "3-Aminoisobutyrate Chr5")
 ```
 
+Generate plots for N-acetylarginine at chromosome 2, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x1266", 1, "afr", 2), 
               plot_overlay_pval("x1266", 2, "afr", 2),
@@ -131,6 +133,7 @@ combine_plots(plot_overlay_pval("x1266", 1, "afr", 2),
               "N-acetylarginine Chr2")
 ```
 
+Generate plots for PE 16:0/20:4 at chromosome 15, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x8990", 1, "afr", 15), 
               plot_overlay_pval("x8990", 2, "afr", 15),
@@ -139,6 +142,7 @@ combine_plots(plot_overlay_pval("x8990", 1, "afr", 15),
               "PE 16:0/20:4 Chr15")
 ```
 
+Generate plots for PC 16:0/20:4 at chromosome 11, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x8914", 1, "afr", 11), 
               plot_overlay_pval("x8914", 2, "afr", 11),
@@ -146,4 +150,6 @@ combine_plots(plot_overlay_pval("x8914", 1, "afr", 11),
               plot_overlay_pval("x8914", 2, "amer", 11),
               "PC 16:0/20:4 Chr11")
 ```
+
+
 
