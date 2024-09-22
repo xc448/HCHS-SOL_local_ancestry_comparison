@@ -50,37 +50,6 @@ brewer.pal(n=3,"Dark2")
 ```
 
 ```{r}
-# Plotting Pearson correlations, overlaying the three ancestries across all chromosomes
-corr_p <- dat_tot |> dplyr::select(Chromosome, Position, Corr_afr_p,
-                                  Corr_amer_p, Corr_eur_p)
-g_corr_p <- corr_p |> ggplot(aes(x = Position, y = Corr_afr_p)) +
-  geom_point(aes(color = "African"), size = 0.3, alpha = 0.4) +
-  geom_point(aes(x = Position, y = Corr_amer_p, color = "Amerindian"), 
-             size  = 0.3, alpha = 0.4) +
-  geom_point(aes(x = Position, y = Corr_eur_p, color = "European"), 
-             size  = 0.3, alpha = 0.4) +
-  theme_minimal()+
-  labs(ylab = "Correlation") +
-  scale_color_manual(values = c("Amerindian" = "#D95F02", "African" = "#1B9E77",
-                                "European" = "#7570B3"),
-                     name = "Ancestry") +
-  labs(y = "Local Ancestry Counts Correlation")+
-  theme(axis.text.x =  element_blank(),
-        axis.title.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        legend.position = "top",
-        axis.title.y = element_text(size = 12),        # Y-axis title font size
-        axis.text.y = element_text(size = 10),         # Y-axis text font size
-        legend.title = element_text(size = 12),        # Legend title font size
-        legend.text = element_text(size = 10))+
-  guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
-  facet_wrap(~Chromosome, scale = "free_x", ncol = 11)
-
-#ggsave(g_corr_p, file = "../Figures/Correlation_old_FLARE3.png", width = 12, height = 8)
-g_corr_p
-```
-
-```{r}
 # Plotting global proportions across chromosomes (mean of all individuals), overlaying old and new
 prop_afr <- dat_tot |> dplyr::select(Chromosome, Position, Prop_afr_old, Prop_afr_new)
 

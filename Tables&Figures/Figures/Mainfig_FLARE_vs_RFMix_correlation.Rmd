@@ -1,0 +1,124 @@
+---
+title: "Mainfig_FLARE_vs_RFMix_correlation"
+output: html_document
+date: "2024-09-21"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Import pacakges
+```{r}
+library(ggplot2)
+library(RColorBrewer)
+library(tidyverse)
+```
+
+# Load the correlation Rdata file -- FLARE3
+
+```{r}
+#load("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3_RFMix_corr_by_chr/correlation_old_flare3_all_SNPs.Rdata") # a dataframe named dat_tot
+load("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3_RFMix_corr_by_chr/correlation_old_flare3_all_SNPs.Rdata")
+
+# load the combined files for SNPs post-QC (R2 > 0.8, MAF >= 0.005)
+# filtered_snps <- readRDS("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_combined.rds")
+filtered_snps <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_combined.rds")
+
+# filter the SNPs for the correlation file
+dat_tot <-  dat_tot |> inner_join(filtered_snps, by =  c("Chromosome" = "chr",
+                                                         "Position" = "snppos"))
+
+# total = 3339277 SNPs
+nrow(dat_tot)/nrow(filtered_snps) # proportion of SNPs mapped to RFMix interval
+```
+
+
+```{r}
+# Get color for plotting 
+brewer.pal(n=3,"Dark2")
+```
+
+```{r}
+# Plotting Pearson correlations, overlaying the three ancestries across all chromosomes
+corr_p <- dat_tot |> dplyr::select(Chromosome, Position, Corr_afr_p,
+                                  Corr_amer_p, Corr_eur_p)
+g_corr_p <- corr_p |> ggplot(aes(x = Position, y = Corr_afr_p)) +
+  geom_point(aes(color = "African"), size = 0.3, alpha = 0.4) +
+  geom_point(aes(x = Position, y = Corr_amer_p, color = "Amerindian"), 
+             size  = 0.3, alpha = 0.4) +
+  geom_point(aes(x = Position, y = Corr_eur_p, color = "European"), 
+             size  = 0.3, alpha = 0.4) +
+  theme_minimal()+
+  labs(ylab = "Correlation") +
+  scale_color_manual(values = c("Amerindian" = "#D95F02", "African" = "#1B9E77",
+                                "European" = "#7570B3"),
+                     name = "Ancestry") +
+  labs(y = "Local Ancestry Counts Correlation - FLARE3 vs. RFMix")+
+  theme(axis.text.x =  element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "top",
+        axis.title.y = element_text(size = 12),        # Y-axis title font size
+        axis.text.y = element_text(size = 10),         # Y-axis text font size
+        legend.title = element_text(size = 12),        # Legend title font size
+        legend.text = element_text(size = 10))+
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
+  facet_wrap(~Chromosome, scale = "free_x", ncol = 11)
+
+#ggsave(g_corr_p, file = "../Figures/Correlation_old_FLARE3.png", width = 12, height = 8)
+g_corr_p
+```
+
+# Load the correlation Rdata file -- FLARE7
+
+```{r}
+load("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE7_RFMix_corr_by_chr/correlation_old_flare7_all_SNPs.Rdata") # a dataframe named dat_tot
+
+# load the combined files for SNPs post-QC (R2 > 0.8, MAF >= 0.005)
+# filtered_snps <- readRDS("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_combined.rds")
+filtered_snps <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_SNPs_filtered_combined.rds")
+
+
+# filter the SNPs for the correlation file
+dat_tot <-  dat_tot |> inner_join(filtered_snps, by =  c("Chromosome" = "chr",
+                                                         "Position" = "snppos"))
+
+# total = 4706181 SNPs
+nrow(dat_tot)/nrow(filtered_snps) # proportion of SNPs mapped to RFMix interval
+```
+
+```{r}
+# Plotting Pearson correlations, overlaying the three ancestries across all chromosomes
+corr_p <- dat_tot |> dplyr::select(Chromosome, Position, Corr_afr_p,
+                                  Corr_amer_p, Corr_eur_p)
+g_corr_p <- corr_p |> ggplot(aes(x = Position, y = Corr_afr_p)) +
+  geom_point(aes(color = "African"), size = 0.3, alpha = 0.4) +
+  geom_point(aes(x = Position, y = Corr_amer_p, color = "Amerindian"), 
+             size  = 0.3, alpha = 0.4) +
+  geom_point(aes(x = Position, y = Corr_eur_p, color = "European"), 
+             size  = 0.3, alpha = 0.4) +
+  theme_minimal()+
+  labs(ylab = "Correlation") +
+  scale_color_manual(values = c("Amerindian" = "#D95F02", "African" = "#1B9E77",
+                                "European" = "#7570B3"),
+                     name = "Ancestry") +
+  labs(y = "Local Ancestry Counts Correlation - FLARE7 vs. RFMix")+
+  theme(axis.text.x =  element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "top",
+        axis.title.y = element_text(size = 12),        # Y-axis title font size
+        axis.text.y = element_text(size = 10),         # Y-axis text font size
+        legend.title = element_text(size = 12),        # Legend title font size
+        legend.text = element_text(size = 10))+
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
+  facet_wrap(~Chromosome, scale = "free_x", ncol = 11)
+
+# ggsave(g_corr_p, file = "../Figures/Correlation_old_FLARE7.png", width = 12, height = 8)
+g_corr_p
+```
+
+
