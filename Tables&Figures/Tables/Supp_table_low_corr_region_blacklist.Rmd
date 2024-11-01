@@ -1,0 +1,170 @@
+---
+title: "Supplementary table: Aligned regions of ENCODE blacklist or annotations of gene clusters from UCSC genome browser to the low correlation SNP-LAI pair between FLARE3 and RFMix"
+output: html_document
+date: "2024-10-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# BiocManager::install("rtracklayer")
+library(rtracklayer)
+library(tidyverse)
+library(ggplot2)
+library(RColorBrewer)
+```
+
+load correlation data files -- FLARE3 vs. RFMix
+```{r}
+#load("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3_RFMix_corr_by_chr/correlation_old_flare3_all_SNPs.Rdata") # a dataframe named dat_tot
+load("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3_RFMix_corr_by_chr/correlation_old_flare3_all_SNPs.Rdata")
+
+# load the combined files for SNPs post-QC (R2 > 0.8, MAF >= 0.005)
+# filtered_snps <- readRDS("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_combined.rds")
+filtered_snps <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_combined.rds")
+
+# filter the SNPs for the correlation file
+dat_tot <-  dat_tot |> inner_join(filtered_snps, by =  c("Chromosome" = "chr",                                                     "Position" = "snppos"))
+```
+
+
+Load the blacklisted region in build hg38 downloaded from https://github.com/Boyle-Lab/Blacklist/tree/master/lists
+```{r}
+blacklist <- read.table("./hg38-blacklist.bed" , header = FALSE, sep = "\t")
+colnames(blacklist) <- c("Chromosome", "startpos", "endpos", "note")
+blacklist$Chromosome <- gsub( "chr", "", blacklist$Chromosome)
+```
+
+Filter intervals within 0.5 Mb from a low correlation region found between FLARE3 & RFMix
+```{r}
+filter_intervals <- function(intervals, snp_positions, distance = 500000) {
+  # Merge intervals and SNP positions based on chromosome (chr)
+  merged <- merge(intervals, snp_positions, by = "Chromosome")
+  print(head(merged))
+  # Calculate if SNP is within the predefined distance of start or end of each interval
+  within_distance <- with(merged, 
+                          (Position >= startpos - distance & Position <= endpos + distance))
+  
+  # Filter intervals that satisfy the condition
+  filtered_intervals <- merged[within_distance, c("Chromosome", "startpos", "endpos", "note", "Position", "rsID")]
+
+  return(unique(filtered_intervals))
+}
+
+# extract the FLARE regions (SNPs) that has a low correlation with RFMix under a certain threshold
+# for a certain chromosome and plot both the SNPs and the mapped intervals from the ENCODE blacklist. 
+plot_mapped_low_correlation <- function(dat, chrnum, distance = 500000, cor_thresh = 0.9){
+  dat_chr <- dat |> 
+  filter(Chromosome == chrnum) |>
+  filter(Corr_afr_p < cor_thresh | Corr_amer_p < cor_thresh | Corr_eur_p < cor_thresh)
+  
+  blacklist_chr <- blacklist |> filter(Chromosome == chrnum) 
+  if(nrow(dat_chr) > 0) {
+    filtered_intervals <- filter_intervals(blacklist_chr, dat_chr)
+    g <- dat_chr |>
+      ggplot(aes(x = Position)) +
+      geom_point(aes(y = Corr_afr_p, color = "African"), size = 0.3, alpha = 0.4) +
+      geom_point(aes(y = Corr_amer_p, color = "Amerindian"), size = 0.3, alpha = 0.4) +
+      geom_point(aes(y = Corr_eur_p, color = "European"), size = 0.3, alpha = 0.4) +
+      
+      # Add vertical lines for blacklisted regions
+      geom_vline(xintercept = c(filtered_intervals$startpos, filtered_intervals$endpos), 
+                 color = "red", linetype = "dashed", alpha = 0.5) +
+      
+      theme_minimal() +
+      labs(y = "Correlation", 
+           title = paste0("Low local ancstry correlations mapped to blacklisted regions, chr", chrnum)) +
+      scale_color_manual(values = c("Amerindian" = "#D95F02", 
+                                    "African" = "#1B9E77",
+                                    "European" = "#7570B3"),
+                         name = "Ancestry")
+    return(list(g = g, filtered_intervals = filtered_intervals))
+  }
+  
+}
+```
+
+Iterate through chromosome 1-22 to extract all the low correlation SNPs in FLARE3 (any of the ancestry < 0.9 r2 will be counted) that are in proximity to the ENCODE blacklist regions
+```{r}
+blacklisted_intervals <- c()
+plots <- list()
+for(chr in 1:22){
+  res <-  plot_mapped_low_correlation(dat_tot, chr)
+  plots[[chr]] <- res$g 
+  blacklisted_intervals <- rbind(blacklisted_intervals, res$filtered_intervals)
+}
+```
+
+Iterate through chromosome 1-22 to extract all the low correlation SNPs in FLARE3 (any of the ancestry < 0.9 r2 will be counted)
+```{r}
+# total low correlation regions
+tot_low_region <- c()
+for(chr in 1:22){
+  dat_chr <- dat_tot |> 
+  filter(Chromosome == chr) |>
+  filter(Corr_afr_p < 0.9 | Corr_amer_p < 0.9 | Corr_eur_p < 0.9)
+  tot_low_region <- rbind(tot_low_region, dat_chr)
+}
+
+```
+
+Add SNPs mapped to the HLA regions chr6:28510120:33480577 to the mapped list 
+```{r}
+startpos <- 28510120-500000 # the start position in HLA - 0.5 Mb
+endpos <- 33480577+500000 # the end position in HLA + 0.5 Mb
+HLA <- dat_tot[dat_tot$Chromosome == 6 & (dat_tot$Position %in% startpos:endpos), 
+               c("Chromosome", "Position", "rsID")] 
+HLA <- HLA |> mutate(startpos= rep(28510120, nrow(HLA)), 
+                     endpos =rep(33480577, nrow(HLA)),
+                     note = rep("HLA region", nrow(HLA))) |>
+  select(Chromosome, startpos, endpos, note, Position, rsID)
+
+blacklisted_intervals <- rbind(blacklisted_intervals, HLA)
+length(unique(blacklisted_intervals$rsID))
+```
+
+Add SNPs mapped to the IGH regions chr15:105586437:106879844 to the mapped list 
+```{r}
+startpos <- 105586437-500000 # the start position in IGH - 0.5 Mb
+endpos <- 106879844+500000 # the end position in IGH + 0.5 Mb
+IGH <- dat_tot[dat_tot$Chromosome == 14 & (dat_tot$Position %in% startpos:endpos), 
+               c("Chromosome", "Position", "rsID")] 
+IGH <- IGH |> mutate(startpos= rep(105586437, nrow(IGH)), 
+                     endpos =rep(106879844, nrow(IGH)),
+                     note = rep("IGH region", nrow(IGH))) |>
+  select(Chromosome, startpos, endpos, note, Position, rsID)
+
+blacklisted_intervals <- rbind(blacklisted_intervals, IGH)
+length(unique(blacklisted_intervals$rsID))
+```
+
+Unique blacklisted intervals that are in proximal to the low correlation regions as reported in the supplementary table
+```{r}
+supp_table <- blacklisted_intervals |> group_by(Chromosome, startpos, endpos, note) |>
+  group_keys()
+```
+
+Calculate the proportion of the mapped SNPs among all SNPs with low correlations: 0.9179402
+```{r}
+length(unique(blacklisted_intervals$rsID))/nrow(tot_low_region)
+```
+
+# Create the supplementary table using kableExtra
+```{r}
+library(kableExtra)
+library(knitr)
+library(htmltools)
+
+colnames(supp_table)[c(2, 3, 4)] <- c("Start Position", "End Position", "Region Annotation")
+supp_table <- supp_table |> 
+  mutate(Chromosome = as.integer(Chromosome)) |>
+  arrange(Chromosome)
+
+kable(supp_table, align = c('c', rep('l', ncol(supp_table) - 1))) %>%
+  kable_classic( full_width = F,
+                html_font = "Arial") %>%
+  row_spec(0, bold = TRUE, align = "center")  %>%
+  column_spec(1, bold = TRUE)
+```

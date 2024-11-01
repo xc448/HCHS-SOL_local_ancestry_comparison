@@ -1,5 +1,5 @@
 ---
-title: "20240802_Global_prop_figure"
+title: "Supp Figure: Global Ancestry Proportions Computed from RFMix, FLARE3, and FLARE7 Dataset"
 author: "Xueying Chen"
 date: "2024-08-02"
 output: html_document
@@ -9,50 +9,80 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Load packages
+Load packages
 ```{r}
 library(tidyverse)
 library(ggplot2)
 library(RColorBrewer)
 ```
 
-## RFMix global proportions
+Plot RFMix global proportions, stratified by genetic analysis groups
 ```{r}
 # sort by the proportion of European ancestry 
-glob_old <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/global_proportion_old.csv", header = TRUE)
+glob_old <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/20240902_global_ancestry_from_2018_local_ancestries/RFMix_global_ancestry_from_LAI.csv", header = TRUE)
+annotation <- read.csv("/Volumes/Sofer\ Lab/HCHS_SOL/Ancestry_files/subject_annotation_2017-09-05.csv")
 dat_old <- glob_old[order(glob_old$mean_eur),]
-colnames(dat_old) <- c("SUBJECT_ID", "afr", "eur", "amer")
+ord <- rownames(dat_old)
+dat_old$ord <- 1:nrow(dat_old)
+colnames(dat_old) <- c("SUBJECT_ID", "African", "European", "Amerindian", "ord")
 
-dat_long_old <- pivot_longer(dat_old, cols = c("afr", "eur", "amer"),
+# matching scanID with SOLID
+matched_annotation <- annotation[match(dat_old$SUBJECT_ID, annotation$SUBJECT_ID), ]
+glob_old <- glob_old[match(matched_annotation$SUBJECT_ID, glob_old$SUBJECT_ID),] 
+dat_old$gengrp6 <- matched_annotation$gengrp6
+dat_old <- dat_old[! is.na(dat_old$gengrp6),]# removed 168 NAs
+
+dat_long_old <- pivot_longer(dat_old, cols = c("African", "European", "Amerindian"),
                          values_to = "Proportion", 
                          names_to = "Ancestry")
 
-dat_long_old <- dat_long_old[order(dat_long_old$Proportion),]
-dat_europe_old <- dat_long_old[which(dat_long_old$Ancestry == "eur"),]
-dat_africa_old <- dat_long_old[which(dat_long_old$Ancestry == "afr"),]
-dat_america_old <- dat_long_old[which(dat_long_old$Ancestry == "amer"),]
+dat_europe_old <- dat_long_old[which(dat_long_old$Ancestry == "European"),]
+dat_africa_old <- dat_long_old[which(dat_long_old$Ancestry == "African"),]
+dat_america_old <- dat_long_old[which(dat_long_old$Ancestry == "Amerindian"),]
 
 dat_long_old <- rbind(dat_europe_old, dat_america_old, dat_africa_old)
 dat_long_old$scanID <- factor(dat_long_old$SUBJECT_ID, levels = dat_europe_old$SUBJECT_ID)
 
-p_old <- ggplot(dat_long_old, aes(fill = Ancestry, y = Proportion, x = ord)) + 
-  geom_bar(position = "stack", stat = "identity") + 
-  labs(x=NA) +
-  theme_dark() +
-  theme(axis.text.x =  element_blank(), 
+dat_long_old$gengrp6 <- gsub("CentralAmerican", "Central American", dat_long_old$gengrp6)
+dat_long_old$gengrp6 <- gsub("SouthAmerican", "South American", dat_long_old$gengrp6)
+dat_long_old$gengrp6 <- gsub("PuertoRican", "Puerto Rican", dat_long_old$gengrp6)
+
+dat_long_old$gengrp6 <- as.factor(dat_long_old$gengrp6)
+dat_long_old$Ancestry <- factor(dat_long_old$Ancestry, levels=c("African", "Amerindian", "European"))
+dark2_colors <- brewer.pal(n = 8, name = "Dark2")
+custom_colors <- c("African" = dark2_colors[1], 
+                   "Amerindian" = dark2_colors[2], 
+                   "European" = dark2_colors[3],
+                   "East Asian" = dark2_colors[6],
+                   "Middle Eastern" = dark2_colors[4],
+                   "Central/South Asian" = dark2_colors[5],
+                   "Oceanian" = dark2_colors[7]
+                   )
+
+p_old <- ggplot(dat_long_old, aes(fill = Ancestry, y = Proportion, x = as.factor(ord))) + 
+  geom_bar(position = "stack", stat = "identity", width = 1) + 
+  labs(x=NA, y = "Global Ancestry Proportion (RFMix)") +
+  theme(panel.grid.major.y = element_blank(),  
+        panel.grid.minor.y = element_blank(),
+        panel.grid.minor.x = element_blank(),
+        axis.text.x =  element_blank(), 
         axis.title.x = element_blank(),
-        axis.ticks.x = element_blank()) + 
+        axis.ticks.x = element_blank(),
+        legend.text = element_text(size = 8),   
+        legend.title = element_text(size = 10),
+        legend.position = "top") + 
   scale_x_discrete(expand = c(0, 0)) +
-  scale_fill_brewer(palette = "Dark2")
-ggsave(p_old, 
-       file = "../Draft/Figures/global_proportions.pdf", 
-       height = 5, width =5) 
+  scale_fill_manual(values = custom_colors)+
+  facet_wrap(~ gengrp6, scales = "free_x",ncol = 6)
+  
+p_old
 ```
 
-
-## FLARE3 global proportions, with SNPs after QC
+FLARE3 global proportions, with SNPs after QC, stratified by genetic analysis groups
 ```{r}
 ################### FLARE3 global proportions ######################
+# Load IDs, Genetic analysis groups information, and global ancestries from FLARE7 dataset 
+
 # load sample SOL ID (FLARE7 and FLARE3 have identical individuals)
 flare_solids <- read.table("/Volumes/Sofer Lab/HCHS_SOL/2023_FLARE_7pop/SOL.id.txt")
 glob <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_global_prop_QC_tot.rds")
@@ -110,35 +140,37 @@ p1 <- ggplot(dat_long, aes(fill = Ancestry, y = Proportion, x = as.factor(ord)))
         legend.title = element_text(size = 10)) + 
   scale_x_discrete(expand = c(0, 0)) +
   scale_fill_manual(values = custom_colors)+
-  facet_wrap(~ gengrp6, scales = "free_x")
+  facet_wrap(~ gengrp6, scales = "free_x", ncol = 6)
 
-# save the plot
-ggsave(p1,
-       file = file.path("../Draft/Figures/", "FLARE3_global_proportions.pdf"),
-       height = 5, width = 6)
 p1
 ```
 
-## FLARE7 global proportions, with SNPs after QC
+FLARE7 global proportions, with SNPs after QC, stratified by genetic analysis groups
 ```{r}
+################### FLARE7global proportions ######################
+
+# Load IDs, Genetic analysis groups information, and global ancestries from FLARE7 data set 
 flare_solids <- read.table("/Volumes/Sofer Lab/HCHS_SOL/2023_FLARE_7pop/SOL.id.txt")
 glob <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_global_prop_QC_tot.rds")
 glob$SUBJECT_ID <- flare_solids$V1
 
+# order individuals by their proportions of Europaean ancestry in ascending order for plotting purposes
 dat <- glob[order(glob$eur),]
 dat$ord <- 1:nrow(dat)
 colnames(dat)[1:7] <- c("African", "Amerindian", "European", "East Asian",  "Central/South Asian", 
                    "Oceanian", "Middle Eastern")
 
-
+# load subject annotation file that contains genetic analysis group information
 pc_file <- "/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/subject_annotation_2017-09-05.csv"
 dat1 <- read.csv(pc_file)
 
+# join dataframes by subject IDs and remove NAs in the genetic analysis group 
 info_groups <- dat1 |> dplyr::select(SUBJECT_ID, gengrp6)
 dat <- inner_join(dat, info_groups, by = "SUBJECT_ID")
 dat <- dat[!is.na(dat$gengrp6), ] # removed 51 individuals without gengrp info
 # 11180 to 11829 individuals
 
+# reshape dataframe to long format for plotting
 dat_long <- pivot_longer(dat, cols = c("African", "European", "Amerindian", "East Asian", 
                                        "Central/South Asian", "Oceanian", "Middle Eastern"),
                          values_to = "Proportion", 
@@ -154,10 +186,10 @@ dat_me<- dat_long[which(dat_long$Ancestry == "Middle Eastern"),]
 dat_csasia<- dat_long[which(dat_long$Ancestry == "Central/South Asian"),]
 dat_ocea<- dat_long[which(dat_long$Ancestry == "Oceanian"),]
 
-
-
 dat_long <- rbind(dat_europe, dat_america, dat_africa, dat_easia, dat_me, dat_csasia, dat_ocea)
 dat_long$SUBJECT_ID <- factor(dat_long$SUBJECT_ID, levels = dat_europe$SUBJECT_ID)
+
+# setting color legends for different ancestries 
 dark2_colors <- brewer.pal(n = 8, name = "Dark2")
 custom_colors <- c("African" = dark2_colors[1], 
                    "Amerindian" = dark2_colors[2], 
@@ -172,11 +204,14 @@ dat_long$gengrp6 <- gsub("CentralAmerican", "Central American", dat_long$gengrp6
 dat_long$gengrp6 <- gsub("SouthAmerican", "South American", dat_long$gengrp6)
 dat_long$gengrp6 <- gsub("PuertoRican", "Puerto Rican", dat_long$gengrp6)
 
+# change categorical variable to factors for plotting
 dat_long$gengrp6 <- as.factor(dat_long$gengrp6)
 
 dat_long$Ancestry <- factor(dat_long$Ancestry, levels=c("African", "Amerindian", "East Asian",
                                                          "Middle Eastern",  "European",
                                                         "Central/South Asian", "Oceanian"))
+
+# plot the global ancestry in FLARE7
 p2 <- ggplot(dat_long, aes(fill = Ancestry, y = Proportion, x = as.factor(ord))) + 
   geom_bar(position = "stack", stat = "identity", width = 1) + 
   labs(x=NA) +
@@ -193,10 +228,8 @@ p2 <- ggplot(dat_long, aes(fill = Ancestry, y = Proportion, x = as.factor(ord)))
         plot.margin = unit(c(0.2, 0.01, 0.2, 0.01), "cm")) + 
   scale_x_discrete(expand = c(0, 0)) +
   scale_fill_manual(values = custom_colors)+
-  facet_wrap(~ gengrp6, scales = "free_x")
-ggsave(p2, 
-       file = file.path("../Draft/Figures/", "FLARE7_global_proportions1.pdf"), 
-       height = 5, width = 6)
+  facet_wrap(~ gengrp6, scales = "free_x", ncol = 6)
 
+p2
 ```
 
