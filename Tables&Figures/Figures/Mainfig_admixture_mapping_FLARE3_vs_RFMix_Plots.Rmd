@@ -19,15 +19,14 @@ library(gridExtra)
 library(gridtext)
 ```
 
+# Load packages
 ```{r}
 # Load the liftOver files for interval info in the RFMix
 intervals_liftover_nodup <- read.table("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/intervals_37-38.bed")
 
 colnames(intervals_liftover_nodup) <- c("chr", "pos_start", "pos_end", "snpid") 
 intervals_liftover_nodup <- intervals_liftover_nodup |> filter(chr != "chrX") # 14753 mapped blocks
-
 ```
-
 
 # Metabolite 3-aminoaceyltate - X1114, for both African and Amerindian ancestry
 ```{r}

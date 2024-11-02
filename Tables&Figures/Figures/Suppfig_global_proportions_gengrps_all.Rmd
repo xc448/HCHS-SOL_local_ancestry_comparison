@@ -9,14 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-Load packages
+## Load packages
 ```{r}
 library(tidyverse)
 library(ggplot2)
 library(RColorBrewer)
 ```
 
-Plot RFMix global proportions, stratified by genetic analysis groups
+## Plot RFMix global proportions, stratified by genetic analysis groups
 ```{r}
 # sort by the proportion of European ancestry 
 glob_old <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/20240902_global_ancestry_from_2018_local_ancestries/RFMix_global_ancestry_from_LAI.csv", header = TRUE)
@@ -78,7 +78,7 @@ p_old <- ggplot(dat_long_old, aes(fill = Ancestry, y = Proportion, x = as.factor
 p_old
 ```
 
-FLARE3 global proportions, with SNPs after QC, stratified by genetic analysis groups
+## FLARE3 global proportions, with SNPs after QC, stratified by genetic analysis groups
 ```{r}
 ################### FLARE3 global proportions ######################
 # Load IDs, Genetic analysis groups information, and global ancestries from FLARE7 dataset 
@@ -145,7 +145,7 @@ p1 <- ggplot(dat_long, aes(fill = Ancestry, y = Proportion, x = as.factor(ord)))
 p1
 ```
 
-FLARE7 global proportions, with SNPs after QC, stratified by genetic analysis groups
+## FLARE7 global proportions, with SNPs after QC, stratified by genetic analysis groups
 ```{r}
 ################### FLARE7global proportions ######################
 

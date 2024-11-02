@@ -1,5 +1,5 @@
 ---
-title: "20240705_PC_plots"
+title: "Supplementary Figure 2: Values of the first two genetic PCs of HCHS/SOL participants colored by global ancestry proportions"
 author: "Xueying Chen"
 date: "2024-07-05"
 output: html_document
@@ -41,7 +41,7 @@ overlap_id <- inner_join(id_old, id_new, by = c("SUBJECT_ID" = "ID"))
 sum(!is.na(match(id_new$ID, id_old$SUBJECT_ID))) # n = 11863
 ```
 
-# Read the global ancestry info from RFMix, FLARE3, and FLARE7
+## Read the global ancestry info from RFMix, FLARE3, and FLARE7
 ```{r}
 # Load global proportion data
 old_proportion <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/global_proportion_old.csv")
@@ -177,7 +177,5 @@ grid.draw(arrangeGrob(legend, arranged_pca_plots, bottom_labels, ncol = 1, heigh
 grid.text("         FLARE7                     FLARE3                        RFMix", x = unit(1, "npc") - unit(0.34, "lines") , y = unit(0.5, "npc"), rot = 90, gp = gpar(fontsize = 10))
 
 ```
-
-
 
 

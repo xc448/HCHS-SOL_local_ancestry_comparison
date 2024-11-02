@@ -1,5 +1,5 @@
 ---
-title: "Suppfig_FLARE7_RFMix_correlation+mean+var_proportion"
+title: "Suppfig: Mean + Variance of ancestry proportions across HCHS/SOL individuals for each SNP (FLARE7) or ancestry interval (RFMix)"
 author: "Xueying Chen"
 date: "2024-06-26"
 output: html_document
@@ -9,15 +9,14 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# load packages 
 ```{r}
 library(ggplot2)
 library(RColorBrewer)
 library(tidyverse)
 ```
 
-
 # Load the correlation Rdata file
-
 ```{r}
 load("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE7_RFMix_corr_by_chr/correlation_old_flare7_all_SNPs.Rdata") # a dataframe named dat_tot
 
@@ -44,15 +43,15 @@ mean(dat_tot$Corr_eur_p)
 sd(dat_tot$Corr_eur_p)
 ```
 
+# Plot mean ancestry proportions, African ancestry, overlaying RFMix and FLARE7 
 ```{r}
 # Get color for plotting 
 brewer.pal(n=3,"Dark2")
-```
 
-```{r}
-# Plotting global proportions across chromosomes (mean of all individuals), overlaying old and new
+# Plotting proportions across chromosomes (mean of all individuals), overlaying RFMix and FLARE7
 prop_afr <- dat_tot |> dplyr::select(Chromosome, Position, Prop_afr_old, Prop_afr_new)
 
+# RFMix proportions - in intervals
 prop_afr_old <- prop_afr |> group_by(Chromosome, Prop_afr_old) |>
   summarise(minpos = min(Position), maxpos = max(Position), .groups = "drop") 
   
@@ -84,18 +83,15 @@ g_prop_afr <- prop_afr |> ggplot(aes(x = Position, y = Prop_afr_new,
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
   facet_wrap(~Chromosome, scale = "free_x", ncol = 11) 
   
-# ggsave(g_prop_afr, file = "./prop_afr.pdf", width = 6, height = 4.5,
-#        device = cairo_pdf)
-
 g_prop_afr
-
 ```
 
+# Plot mean ancestry proportions, Amerinidan ancestry, overlaying RFMix and FLARE7 
 ```{r}
 
 prop_amer <- dat_tot |> dplyr::select(Chromosome, Position, Prop_amer_old, 
                                       Prop_amer_new)
-
+# RFMix proportions - in intervals
 prop_amer_old <- prop_amer |> group_by(Chromosome, Prop_amer_old) |>
   summarise(minpos = min(Position), maxpos = max(Position), .groups = "drop") 
 
@@ -125,15 +121,14 @@ g_prop_amer <- prop_amer |> ggplot(aes(x = Position, y = Prop_amer_new,
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
   facet_wrap(~Chromosome, scale = "free_x", ncol = 11)
 g_prop_amer
-# ggsave(g_prop_amer, file = "./prop_amer.pdf", width = 6, height = 4.5,
-#        device = cairo_pdf)
 ```
 
-# Plotting European ancestry 
+# Plot mean ancestry proportions, European ancestry, overlaying RFMix and FLARE7 
 ```{r}
 prop_eur <- dat_tot |> dplyr::select(Chromosome, Position, Prop_eur_old, 
                                       Prop_eur_new)
 
+# RFMix proportions - in intervals
 prop_eur_old <- prop_eur |> group_by(Chromosome, Prop_eur_old) |>
   summarise(minpos = min(Position), maxpos = max(Position), .groups = "drop") 
 
@@ -164,8 +159,6 @@ g_prop_eur <- prop_eur |> ggplot(aes(x = Position, y = Prop_eur_new,
   guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
   facet_wrap(~Chromosome, scale = "free_x", ncol = 11)
 
-# ggsave(g_prop_eur, file = "./prop_eur.pdf", width = 6, height = 4.5,
-#        device = cairo_pdf)
 g_prop_eur
 ```
 
@@ -176,6 +169,7 @@ g_prop_eur
 var_afr <- dat_tot |> dplyr::select(Chromosome, Position, Var_afr_old, 
                                       Var_afr_new)
 
+# RFMix ancesry proportion variance - in intervals
 var_afr_old <- var_afr |> group_by(Chromosome, Var_afr_old) |>
   summarise(minpos = min(Position), maxpos = max(Position), .groups = "drop") 
 
@@ -208,12 +202,12 @@ g_var_afr
 
 ```
 
-
 # Amerindian Ancestry
 ```{r}
 var_amer <- dat_tot |> dplyr::select(Chromosome, Position, Var_amer_old, 
                                       Var_amer_new)
 
+# RFMix ancesry proportion variance - in intervals
 var_amer_old <- var_amer |> group_by(Chromosome, Var_amer_old) |>
   summarise(minpos = min(Position), maxpos = max(Position), .groups = "drop") 
 
@@ -245,12 +239,12 @@ g_var_amer <- var_amer |> ggplot(aes(x = Position, y = Var_amer_new,
 g_var_amer
 ```
 
-
 #  European ancestry
 ```{r}
 var_eur <- dat_tot |> dplyr::select(Chromosome, Position, Var_eur_old, 
                                       Var_eur_new)
 
+# RFMix ancesry proportion variance - in intervals
 var_eur_old <- var_eur |> group_by(Chromosome, Var_eur_old) |>
   summarise(minpos = min(Position), maxpos = max(Position), .groups = "drop") 
 

@@ -16,7 +16,7 @@ library(ggplot2)
 library(RColorBrewer)
 ```
 
-load correlation data files -- FLARE3 vs. RFMix
+## load correlation data files -- FLARE3 vs. RFMix
 ```{r}
 #load("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3_RFMix_corr_by_chr/correlation_old_flare3_all_SNPs.Rdata") # a dataframe named dat_tot
 load("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3_RFMix_corr_by_chr/correlation_old_flare3_all_SNPs.Rdata")
@@ -29,15 +29,14 @@ filtered_snps <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancest
 dat_tot <-  dat_tot |> inner_join(filtered_snps, by =  c("Chromosome" = "chr",                                                     "Position" = "snppos"))
 ```
 
-
-Load the blacklisted region in build hg38 downloaded from https://github.com/Boyle-Lab/Blacklist/tree/master/lists
+## Load the blacklisted region in build hg38 downloaded from https://github.com/Boyle-Lab/Blacklist/tree/master/lists
 ```{r}
 blacklist <- read.table("./hg38-blacklist.bed" , header = FALSE, sep = "\t")
 colnames(blacklist) <- c("Chromosome", "startpos", "endpos", "note")
 blacklist$Chromosome <- gsub( "chr", "", blacklist$Chromosome)
 ```
 
-Filter intervals within 0.5 Mb from a low correlation region found between FLARE3 & RFMix
+## Filter intervals within 0.5 Mb from a low correlation region found between FLARE3 & RFMix
 ```{r}
 filter_intervals <- function(intervals, snp_positions, distance = 500000) {
   # Merge intervals and SNP positions based on chromosome (chr)
@@ -86,7 +85,7 @@ plot_mapped_low_correlation <- function(dat, chrnum, distance = 500000, cor_thre
 }
 ```
 
-Iterate through chromosome 1-22 to extract all the low correlation SNPs in FLARE3 (any of the ancestry < 0.9 r2 will be counted) that are in proximity to the ENCODE blacklist regions
+## Iterate through chromosome 1-22 to extract all the low correlation SNPs in FLARE3 (any of the ancestry < 0.9 r2 will be counted) that are in proximity to the ENCODE blacklist regions
 ```{r}
 blacklisted_intervals <- c()
 plots <- list()
@@ -110,7 +109,7 @@ for(chr in 1:22){
 
 ```
 
-Add SNPs mapped to the HLA regions chr6:28510120:33480577 to the mapped list 
+## Add SNPs mapped to the HLA regions chr6:28510120:33480577 to the mapped list 
 ```{r}
 startpos <- 28510120-500000 # the start position in HLA - 0.5 Mb
 endpos <- 33480577+500000 # the end position in HLA + 0.5 Mb
@@ -125,7 +124,7 @@ blacklisted_intervals <- rbind(blacklisted_intervals, HLA)
 length(unique(blacklisted_intervals$rsID))
 ```
 
-Add SNPs mapped to the IGH regions chr15:105586437:106879844 to the mapped list 
+## Add SNPs mapped to the IGH regions chr15:105586437:106879844 to the mapped list 
 ```{r}
 startpos <- 105586437-500000 # the start position in IGH - 0.5 Mb
 endpos <- 106879844+500000 # the end position in IGH + 0.5 Mb
@@ -146,12 +145,12 @@ supp_table <- blacklisted_intervals |> group_by(Chromosome, startpos, endpos, no
   group_keys()
 ```
 
-Calculate the proportion of the mapped SNPs among all SNPs with low correlations: 0.9179402
+## Calculate the proportion of the mapped SNPs among all SNPs with low correlations: 0.9179402
 ```{r}
 length(unique(blacklisted_intervals$rsID))/nrow(tot_low_region)
 ```
 
-# Create the supplementary table using kableExtra
+## Create the supplementary table using kableExtra
 ```{r}
 library(kableExtra)
 library(knitr)

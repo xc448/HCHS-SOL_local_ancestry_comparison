@@ -8,6 +8,7 @@ date: "2024-07-07"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Load packages
 ```{r}
 library(ggplot2)
 library(gridExtra)
@@ -29,7 +30,6 @@ colnames(intervals_liftover_nodup) <- c("chr", "pos_start", "pos_end", "snpid")
 intervals_liftover_nodup <- intervals_liftover_nodup |> filter(chr != "chrX") # 14753 mapped blocks
 
 ```
-
 
 # Metabolite 3-aminoaceyltate - X1114, for both African and Amerindian ancestry
 ```{r}
@@ -115,7 +115,7 @@ combine_plots  <- function(gafr_b1, gafr_b2, gamer_b1, gamer_b2,  title){
 }
 ```
 
-Generate plots for 3-Aminoisobutyrate at chromosome 5, for both batches in FLARE3
+Generate plots for 3-Aminoisobutyrate at chromosome 5, for both batches in FLARE7
 ```{r}
 combine_plots(plot_overlay_pval("x1114", 1, "afr", 5), 
               plot_overlay_pval("x1114", 2, "afr", 5),
@@ -124,7 +124,7 @@ combine_plots(plot_overlay_pval("x1114", 1, "afr", 5),
               "3-Aminoisobutyrate Chr5")
 ```
 
-Generate plots for N-acetylarginine at chromosome 2, for both batches in FLARE3
+Generate plots for N-acetylarginine at chromosome 2, for both batches in FLARE7
 ```{r}
 combine_plots(plot_overlay_pval("x1266", 1, "afr", 2), 
               plot_overlay_pval("x1266", 2, "afr", 2),
@@ -133,7 +133,7 @@ combine_plots(plot_overlay_pval("x1266", 1, "afr", 2),
               "N-acetylarginine Chr2")
 ```
 
-Generate plots for PE 16:0/20:4 at chromosome 15, for both batches in FLARE3
+Generate plots for PE 16:0/20:4 at chromosome 15, for both batches in FLARE7
 ```{r}
 combine_plots(plot_overlay_pval("x8990", 1, "afr", 15), 
               plot_overlay_pval("x8990", 2, "afr", 15),
@@ -142,7 +142,7 @@ combine_plots(plot_overlay_pval("x8990", 1, "afr", 15),
               "PE 16:0/20:4 Chr15")
 ```
 
-Generate plots for PC 16:0/20:4 at chromosome 11, for both batches in FLARE3
+Generate plots for PC 16:0/20:4 at chromosome 11, for both batches in FLARE7
 ```{r}
 combine_plots(plot_overlay_pval("x8914", 1, "afr", 11), 
               plot_overlay_pval("x8914", 2, "afr", 11),
