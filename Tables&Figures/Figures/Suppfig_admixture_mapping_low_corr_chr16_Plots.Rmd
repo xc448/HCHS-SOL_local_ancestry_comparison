@@ -1,0 +1,141 @@
+---
+title: "Admixture mapping result of propyl 4-hydroxybenzoate sulfate, focusing on African ancestry at chromosome 16"
+output: html_document
+date: "2024-10-19"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Load packages
+```{r}
+library(cowplot) # for stacking plots 
+library(ggplot2)
+library(gridExtra)
+library(tidyverse)
+library(reshape2)
+library(lattice)
+library(grid)
+library(gridExtra)
+library(gridtext)
+```
+
+# Load RFMix-related data #
+```{r}
+######### RFMix admixture mapping results loading and liftover information ###### 
+# Load the liftOver files for interval info in the RFMix
+intervals_liftover_nodup <- read.table("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/intervals_37-38.bed")
+
+# intervals_liftover_nodup <- read.table("R:\\Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/intervals_37-38.bed")
+
+colnames(intervals_liftover_nodup) <- c("chr", "pos_start", "pos_end", "snpid") 
+intervals_liftover_nodup <- intervals_liftover_nodup |> filter(chr != "chrX") # 14753 mapped blocks
+
+```
+
+# Define a general function with input of metabolite and batch to plot the -log10(p-values)
+```{r}
+plot_overlay_pval <- function(metab, batch, ancestry, chr, inference){
+  # Load the RFMix admixmap results 
+  res_RFMix <- readRDS(paste0("./admix_map_all/admixmap_low_corr/RFMix_res_", ancestry,
+  "_", metab, "_b", batch, ".rds"))
+  res_RFMix_plot <- cbind(intervals_liftover_nodup$chr, 
+                          intervals_liftover_nodup$pos_start,
+                          intervals_liftover_nodup$pos_end,
+                          res_RFMix[order(as.numeric(rownames(res_RFMix))),])
+  colnames(res_RFMix_plot)[1:3] <- c("chr", "pos.start", "pos.end")
+  res_RFMix_plot_long <- pivot_longer(res_RFMix_plot, 
+                                           cols = c("pos.start", "pos.end"), 
+                                           names_to = "poscat", values_to = "pos")
+  # Load the FLAREs3 admixmap results
+  load(paste0("./admix_map_all/admixmap_low_corr/", metab, inference, "_", ancestry, "_b", batch, "_chr", chr, ".Rdata"))
+  
+  
+  # Start plotting
+  # determine colors based on the ancestry given in the argument
+  if(ancestry == "afr"){
+    if(inference == "FLARE3"){
+      colors <- c("FLARE3" = "#AADCA9", "RFMix" = "#24500F")
+    }else{
+      colors <- c("FLARE7" = "#AADCA9", "RFMix" = "#24500F")
+    }
+    legend_name <- "African Ancestry"
+  }else{
+    if(inference == "FLARE3"){
+      colors <- c("FLARE3" = "#ffb38a", "RFMix" = "#854900")
+    }else{
+      colors <- c("FLARE7" = "#ffb38a", "RFMix" = "#854900")
+    }
+    legend_name <- "Amerindian Ancestry"
+  }
+  chrnum <- paste0("chr", chr)
+  overlay_plot <- res_RFMix_plot_long |>
+    filter(chr == chrnum)|> 
+    ggplot(aes(x = pos, y = -log(Score.pval, 10), col = "RFMix")) +
+    geom_point(data = res, aes(x = snppos, y =  -log(Score.pval, 10), 
+                               color = inference), 
+               size = 0.6, alpha = 0.3) +
+    geom_line(linewidth = 0.3) +
+    labs(x = "") +
+    scale_color_manual(values = colors,
+                     name = legend_name) +
+    theme_minimal()+
+    theme(plot.title = element_text(hjust = 0.5),
+          legend.position = "top") +
+    guides(color = guide_legend(override.aes = list(size = 3, alpha = 0.8))) 
+  return(overlay_plot)
+}
+```
+
+# Use this function below to combine plots from different inferences and batches
+```{r}
+# Combine batch 1 and batch 2 for both ancestries in an Miami plot
+combine_plots  <- function(ginf1_b1, ginf1_b2, ginf2_b1, ginf2_b2,  title){
+  ginf1_b1 <- ginf1_b1 + 
+    theme(plot.margin = unit(c(0, 0.2, -2, 0.2), "lines"))
+  
+  ginf1_b2 <- ginf1_b2 + 
+    theme(axis.text.x =element_blank(),
+          plot.margin = unit(c(1, 0.2, 0, 0.2), "lines")) +
+    theme(legend.position = "none")+
+    scale_y_reverse()
+  
+  ginf2_b1 <- ginf2_b1 + 
+    theme(plot.margin = unit(c(0, 0.2, -2, 0.2), "lines"))
+  
+  ginf2_b2 <- ginf2_b2 + 
+    theme(axis.text.x =element_blank(),
+          plot.margin = unit(c(1, 0.2, 0, 0.2), "lines")) +
+    theme(legend.position = "none")+
+    scale_y_reverse()
+  
+  # append the plots all together 
+  grid.newpage()
+  pushViewport(viewport(layout = grid.layout(2, 1, heights = unit(c(1.5, 8.5), "null"))))
+  
+  # Add the title
+  grid.text(title, y = unit(1, "npc") - unit(1.5, "lines"), 
+            gp = gpar(fontsize = 12, fontface = "bold"))
+  
+  # Add the combined plot
+  pushViewport(viewport(layout.pos.row = 2, layout.pos.col = 1))
+  grid.draw(cbind(rbind(ggplotGrob(ginf1_b1),  ggplotGrob(ginf1_b2)), 
+                  rbind(ggplotGrob(ginf2_b1),  ggplotGrob(ginf2_b2)), 
+                  size = "last"))
+}
+```
+
+# Plot the admixture mapping reuslts for the regions with low FLARE-RFMix correaltions:
+# In bothe FLARE3 and FLARE7
+```{r}
+f3b1 <- plot_overlay_pval("x6264", 1, ancestry = "afr", chr= 16, inference = "FLARE3") +
+   geom_vline(xintercept = c(29222050, 29296362),
+                          ,color = "red", linetype = "dashed", alpha = 0.7,  linewidth = 0.2)
+f3b2 <- plot_overlay_pval("x6264", 2, ancestry = "afr", chr= 16, inference = "FLARE3") + geom_vline(xintercept = c(29222050, 29296362), color = "red", linetype = "dashed", alpha = 0.7,  linewidth = 0.2)
+f7b1 <- plot_overlay_pval("x6264", 1, ancestry = "afr", chr= 16, inference = "FLARE7") + geom_vline(xintercept = c(29222050, 29296362), color = "red", linetype = "dashed", alpha = 0.7,  linewidth = 0.2)
+f7b2 <- plot_overlay_pval("x6264", 2, ancestry = "afr", chr= 16, inference = "FLARE7") +
+  geom_vline(xintercept = c(29222050, 29296362), color = "red", linetype = "dashed", 
+             alpha = 0.7,  linewidth = 0.2)
+combine_plots(f3b1, f3b2, f7b1, f7b2,  "")
+```
