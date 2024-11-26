@@ -1,5 +1,5 @@
 ---
-title: "Supplementary Figure 2: Values of the first two genetic PCs of HCHS/SOL participants colored by global ancestry proportions"
+title: "Supplementary Figure: Values of the first two genetic PCs of HCHS/SOL participants colored by global ancestry proportions"
 author: "Xueying Chen"
 date: "2024-07-05"
 output: html_document

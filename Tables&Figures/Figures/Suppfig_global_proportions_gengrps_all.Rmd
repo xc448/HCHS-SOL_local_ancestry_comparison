@@ -1,5 +1,5 @@
 ---
-title: "Supp Figure: Global Ancestry Proportions Computed from RFMix, FLARE3, and FLARE7 Dataset"
+title: "Supplementary Figure: Global Ancestry Proportions Computed from RFMix, FLARE3, and FLARE7 Dataset"
 author: "Xueying Chen"
 date: "2024-08-02"
 output: html_document

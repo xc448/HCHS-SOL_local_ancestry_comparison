@@ -1,5 +1,5 @@
 ---
-title: "Suppfig: Mean + Variance of ancestry proportions across HCHS/SOL individuals for each SNP (FLARE7) or ancestry interval (RFMix)"
+title: "Supplementary Figure: Mean + Variance of ancestry proportions across HCHS/SOL individuals for each SNP (FLARE7) or ancestry interval (RFMix)"
 author: "Xueying Chen"
 date: "2024-06-26"
 output: html_document

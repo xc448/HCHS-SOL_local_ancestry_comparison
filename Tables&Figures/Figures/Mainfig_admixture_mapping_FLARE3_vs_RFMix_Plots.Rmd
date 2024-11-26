@@ -1,5 +1,5 @@
 ---
-title: "20240723_metab_admixture_assoc_FLARE3_Plots"
+title: "Main Figure: Admixture mapping using local ancestry counts in RFMix and FLARE3 at the chromosome with most significant admixture mapping associations for the four metabolites: 3-aminoisobutyrate at chromosome 5 (A), N-acetylarginine at chromosome 5 (B), PE 16:0/20:4 at chromosome 15(C), and PC 16:0/20:4 at chromosome 11 (D)."
 output: html_document
 date: "2024-07-23"
 ---
@@ -8,6 +8,7 @@ date: "2024-07-23"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+*Load packages*
 ```{r}
 library(ggplot2)
 library(gridExtra)
@@ -19,7 +20,6 @@ library(gridExtra)
 library(gridtext)
 ```
 
-# Load packages
 ```{r}
 # Load the liftOver files for interval info in the RFMix
 intervals_liftover_nodup <- read.table("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/intervals_37-38.bed")
@@ -28,7 +28,7 @@ colnames(intervals_liftover_nodup) <- c("chr", "pos_start", "pos_end", "snpid")
 intervals_liftover_nodup <- intervals_liftover_nodup |> filter(chr != "chrX") # 14753 mapped blocks
 ```
 
-# Metabolite 3-aminoaceyltate - X1114, for both African and Amerindian ancestry
+**Define a function that overlaps the RFMix and FLARE3 admixture mapping result from specified ancestry, batch, and chromosome**
 ```{r}
 plot_overlay_pval <- function(metab, batch, ancestry, chr){
   # Load the RFMix admixmap results 
@@ -74,7 +74,7 @@ plot_overlay_pval <- function(metab, batch, ancestry, chr){
 }
 ```
 
-# Use this function below to combine plots from different ancestries and batches
+**Use this function below to combine plots from different ancestries (African and Amerindian) and the two batches**
 ```{r}
 # Combine batch 1 and batch 2 for both ancestries in an Miami plot
 combine_plots  <- function(gafr_b1, gafr_b2, gamer_b1, gamer_b2,  title){
@@ -112,6 +112,7 @@ combine_plots  <- function(gafr_b1, gafr_b2, gamer_b1, gamer_b2,  title){
 }
 ```
 
+*Panel (A)*
 Generate plots for 3-Aminoisobutyrate at chromosome 5, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x1114", 1, "afr", 5), 
@@ -121,6 +122,7 @@ combine_plots(plot_overlay_pval("x1114", 1, "afr", 5),
               "3-Aminoisobutyrate Chr5")
 ```
 
+*Panel (B)*
 Generate plots for N-acetylarginine at chromosome 2, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x1266", 1, "afr", 2), 
@@ -130,6 +132,7 @@ combine_plots(plot_overlay_pval("x1266", 1, "afr", 2),
               "N-acetylarginine Chr2")
 ```
 
+*Panel (C)*
 Generate plots for PE 16:0/20:4 at chromosome 15, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x8990", 1, "afr", 15), 
@@ -139,6 +142,7 @@ combine_plots(plot_overlay_pval("x8990", 1, "afr", 15),
               "PE 16:0/20:4 Chr15")
 ```
 
+*Panel (D)*
 Generate plots for PC 16:0/20:4 at chromosome 11, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x8914", 1, "afr", 11), 
@@ -147,4 +151,3 @@ combine_plots(plot_overlay_pval("x8914", 1, "afr", 11),
               plot_overlay_pval("x8914", 2, "amer", 11),
               "PC 16:0/20:4 Chr11")
 ```
-

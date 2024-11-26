@@ -1,5 +1,5 @@
 ---
-title: "Admixture mapping result of propyl 4-hydroxybenzoate sulfate, focusing on African ancestry at chromosome 16"
+title: "Supplementary Figure: Admixture mapping result of propyl 4-hydroxybenzoate sulfate, focusing on African ancestry at chromosome 16"
 output: html_document
 date: "2024-10-19"
 ---
