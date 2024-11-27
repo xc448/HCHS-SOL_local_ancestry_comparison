@@ -1,0 +1,156 @@
+---
+title: "Main Figure: Global ancestry correlation comparisons for RFMix, FLARE3, and FLARE7 to ADMIXTURE"
+output: html_document
+date: "2024-09-27"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load necessary packages 
+```{r}
+library(ggplot2)
+library(RColorBrewer)
+library(tidyverse)
+library(ggpubr)
+library(gridExtra)
+library(gridtext)
+```
+
+## Load dataasets -- global ancestry (mean ancestry proportions) from 
+## RFMIX, ADMIXTURE, FLARE3, and FLARE7
+```{r}
+glob_rfmix <- read.csv("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/global_proportion_old.csv", header = TRUE)
+glob_rfmix <- glob_rfmix |> 
+  rename( "African" = "mean_afr",  "European" = "mean_eur", "Amerindian" = "mean_amer") |>
+  pivot_longer(cols = c("African", "European", "Amerindian"), 
+               values_to = "RFMix_proportion",
+              names_to = "ancestry")
+
+glob_admixture <- read.table("/Volumes/Sofer Lab/HCHS_SOL/Ancestry_files/UW_GAC_DMDA_20180516_global_ancestries/SOL_global_ancestry.txt", header = TRUE)
+glob_admixture <- glob_admixture |> 
+  rename( "African" = "Africa",  "European" = "Europe", "Amerindian" = "America") |> 
+  pivot_longer(cols = c("African", "European", "Amerindian"),
+                         values_to = "Admixture_proportion", 
+                         names_to = "ancestry") 
+
+flare_solids <- read.table("/Volumes/Sofer Lab/HCHS_SOL/2023_FLARE_7pop/SOL.id.txt")
+
+glob_flare3 <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_global_prop_QC_tot.rds")
+glob_flare3$SOL_ID <- flare_solids$V1 
+glob_flare3 <-  glob_flare3 |> rename( "African" = "afr",  "European" = "eur", "Amerindian" = "amer") |>
+  pivot_longer(cols = c("African", "European", "Amerindian"), 
+               values_to = "FLARE3_proportion",
+              names_to = "ancestry")
+
+glob_flare7 <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_global_prop_QC_tot.rds")
+glob_flare7$SOL_ID <- flare_solids$V1
+glob_flare7 <-  glob_flare7 |> rename( "African" = "afr",  "European" = "eur", "Amerindian" = "amer") |>
+  select(African, European, Amerindian, SOL_ID) |>
+  pivot_longer(cols = c("African", "European", "Amerindian"), 
+               values_to = "FLARE7_proportion",
+               names_to = "ancestry")
+```
+
+## Adjust colors 
+```{r}
+dark2_colors <- brewer.pal(n = 8, name = "Dark2")
+custom_colors <- c("African" = dark2_colors[1], 
+                   "Amerindian" = dark2_colors[2], 
+                   "European" = dark2_colors[3])
+```
+
+## Define plotting function
+```{r}
+plot_global_correlation <- function(joined_data, name1, name2){
+  # Plot scatter plot of global proportions in African, Amerindian,
+  # and European ancestries, using inference2 against inference1 using data columns      # preprocessed into the long format. 
+  # Return: scatter plot and correlation coefficient across the three ancestries
+  
+  g <- joined_data |> ggplot(aes(x = inference1, y = inference2)) +
+  geom_point(aes(alpha = 0.5, colour = ancestry )) +
+  geom_abline(slope = 1, intercept = 0) +
+  theme_minimal() +
+  labs(y = paste0("Global Ancestry Proportion - ", name2), 
+       x = paste0("Global Ancestry Proportion - ", name1),
+       colour = "Ancestry") +
+  scale_color_manual(values = custom_colors)+
+  theme(legend.position = "top", 
+        panel.border = element_rect(color = "black", fill = NA, size = 0.3), 
+        strip.background = element_rect(fill = "grey90", color = "black"))  +
+  guides(alpha = "none") +
+  facet_wrap(~ancestry) +
+  stat_cor(method = "pearson", aes(label = ..r.label..), digits = 3, label.x.npc = "left", label.y.npc = "top", )
+  
+  return(g)
+  
+}
+```
+
+## RFMix vs. ADMIXTURE 
+```{r}
+overlap_rfmix_admixture <- glob_rfmix |> 
+  inner_join(glob_admixture, 
+             by = c("SUBJECT_ID" = "SOL_ID",  "ancestry" = "ancestry")) |>
+  rename("inference1" = "Admixture_proportion", "inference2" = "RFMix_proportion") |>
+  mutate(ancestry = factor(ancestry, levels=c("African", "Amerindian", "European")) )
+
+p_rfmix_admixture <- plot_global_correlation(overlap_rfmix_admixture, "ADMIXTURE", "RFMix")
+p_rfmix_admixture
+```
+
+## FLARE3 vs. ADMIXTURE 
+```{r}
+overlap_FLARE3_admixture <- glob_flare3 |> 
+  inner_join(glob_admixture, 
+             by = c("SOL_ID",  "ancestry")) |>
+  rename("inference1" = "Admixture_proportion", "inference2" = "FLARE3_proportion") |>
+  mutate(ancestry = factor(ancestry, levels=c("African", "Amerindian", "European")) )
+
+FLARE3_admixture <- plot_global_correlation(overlap_FLARE3_admixture, "ADMIXTURE", "FLARE3")
+FLARE3_admixture
+```
+
+## FLARE7 vs. ADMIXTURE 
+```{r}
+overlap_FLARE7_admixture <- glob_flare7 |> 
+  inner_join(glob_admixture, 
+             by = c("SOL_ID",  "ancestry")) |>
+  rename("inference1" = "Admixture_proportion", "inference2" = "FLARE7_proportion") |>
+  mutate(ancestry = factor(ancestry, levels=c("African", "Amerindian", "European")) )
+
+FLARE7_admixture <- plot_global_correlation(overlap_FLARE7_admixture, "ADMIXTURE", "FLARE7")
+FLARE7_admixture
+```
+
+## Combine the three plots comparing to ADMIXTURE
+```{r}
+plots <- list()
+plots[[1]] <- p_rfmix_admixture + 
+  theme(legend.text = element_text(size = 18), legend.title = element_text(size = 16))+
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 1)))
+plots[[2]] <- FLARE3_admixture
+plots[[3]] <- FLARE7_admixture
+
+extract_legend <- function(plot) {
+  plot_build <- ggplotGrob(plot)
+  legend <- gtable::gtable_filter(plot_build, "guide-box")
+  return(legend)
+}
+
+# Extract the legend from the first plot
+legend <- extract_legend(plots[[1]])
+
+plots <- lapply(plots, function(plot) plot + 
+                  theme(legend.position = "none", 
+                        axis.text.y = element_text(margin = margin(r = 5))))
+
+# Create the labels as grobs
+arranged_global_plots <- arrangeGrob(grobs = plots, ncol = 1)
+# Combine the legend and the plots with the centered labels
+grid.newpage()
+
+grid.draw(arrangeGrob(legend, arranged_global_plots, ncol = 1, heights = c(1, 8.5)))
+```
+
