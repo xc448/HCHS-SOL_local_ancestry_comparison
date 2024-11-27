@@ -1,5 +1,5 @@
-# HCHS-SOL_local_ancestry_comparison
-Code from paper -- Comparison of FLARE and RFMix local ancestry inference in the HCHS/SOL
+# Old vs. New Local Ancestry Inference in HCHS/SOL: A Comparative Study
 
-## The three subfolders in this repository correspond to data preparation, analysis (global ancestry, local ancestry correlations, admixture mapping, and threshold estimation), and tables/figures. 
+Code from paper -- Old vs. New Local Ancestry Inference in HCHS/SOL: A Comparative Study
 
+## The three subfolders in this repository correspond to data preparation, data analysis (ancestry correlations between different inference methods, admixture mapping, and threshold estimation), and tables/figures. 
