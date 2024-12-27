@@ -1,0 +1,98 @@
+---
+title: "Supplementary Figure: Pearson correlation of local ancestry counts with SNPs filtered by R2 >= 0.95"
+output: html_document
+date: "2024-10-20"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+**Load datasets**
+```{r}
+# local ancestry correlation btwn RFMix and FLARE3, chr1-22
+load("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3_RFMix_corr_by_chr/correlation_old_flare3_all_SNPs.Rdata")
+
+# information (rsID, positions, chr...) for FLARE3 SNPs that passed harsh QC (0.95 imputation quality as a cutoff)
+filtered_snps_95 <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_combined_r.95.rds")
+
+# filter the SNPs for the correlation file
+dat_tot <-  dat_tot |> inner_join(filtered_snps_95, by = c("Chromosome" = "chr",
+                                                         "Position" = "snppos"))
+```
+
+**FLARE3 vs. RFMix corrleations**
+```{r}
+# Plotting Pearson correlations, overlaying the three ancestries across all chromosomes
+corr_95 <- dat_tot |> dplyr::select(Chromosome, Position, Corr_afr_p,
+                                  Corr_amer_p, Corr_eur_p)
+g_corr_95 <- corr_95 |> ggplot(aes(x = Position, y = Corr_afr_p)) +
+  geom_point(aes(color = "African"), size = 0.3, alpha = 0.4) +
+  geom_point(aes(x = Position, y = Corr_amer_p, color = "Amerindian"), 
+             size  = 0.3, alpha = 0.4) +
+  geom_point(aes(x = Position, y = Corr_eur_p, color = "European"), 
+             size  = 0.3, alpha = 0.4) +
+  theme_minimal()+
+  labs(ylab = "Correlation") +
+  scale_color_manual(values = c("Amerindian" = "#D95F02", "African" = "#1B9E77",
+                                "European" = "#7570B3"),
+                     name = "Ancestry") +
+  labs(y = "Local Ancestry Counts Correlation (FLARE3)")+
+  scale_y_continuous(limits = c(0.6, 1)) +
+  theme(axis.text.x =  element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "top",
+        axis.title.y = element_text(size = 12),        # Y-axis title font size
+        axis.text.y = element_text(size = 10),         # Y-axis text font size
+        legend.title = element_text(size = 12),        # Legend title font size
+        legend.text = element_text(size = 10))+
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
+  facet_wrap(~Chromosome, scale = "free_x", ncol = 11)
+
+g_corr_95
+```
+
+**FLARE7 vs. RFMix corrleations**
+```{r}
+# local ancestry correlation btwn RFMix and FLARE7, chr1-22
+load("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE7_RFMix_corr_by_chr/correlation_old_flare7_all_SNPs.Rdata")
+
+# information (rsID, positions, chr...) for FLARE7 SNPs that passed harsh QC (0.95 imputation quality as a cutoff)
+filtered_snps_95_flare7 <- readRDS("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_SNPs_filtered_combined_r.95.rds")
+
+# filter the SNPs for the correlation file
+dat_tot_flare7 <-  dat_tot |> inner_join(filtered_snps_95_flare7, by = c("Chromosome" = "chr",
+                                                         "Position" = "snppos"))
+```
+
+```{r}
+# Plotting Pearson correlations, overlaying the three ancestries across all chromosomes
+corr_95_flare7 <- dat_tot_flare7 |> dplyr::select(Chromosome, Position, Corr_afr_p,
+                                  Corr_amer_p, Corr_eur_p)
+g_corr_95_flare7 <- corr_95_flare7 |> ggplot(aes(x = Position, y = Corr_afr_p)) +
+  geom_point(aes(color = "African"), size = 0.3, alpha = 0.4) +
+  geom_point(aes(x = Position, y = Corr_amer_p, color = "Amerindian"), 
+             size  = 0.3, alpha = 0.4) +
+  geom_point(aes(x = Position, y = Corr_eur_p, color = "European"), 
+             size  = 0.3, alpha = 0.4) +
+  theme_minimal()+
+  labs(ylab = "Correlation") +
+  scale_color_manual(values = c("Amerindian" = "#D95F02", "African" = "#1B9E77",
+                                "European" = "#7570B3"),
+                     name = "Ancestry") +
+  labs(y = "Local Ancestry Counts Correlation (FLARE7)")+
+  scale_y_continuous(limits = c(0.6, 1)) +
+  theme(axis.text.x =  element_blank(),
+        axis.title.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "top",
+        axis.title.y = element_text(size = 12),        # Y-axis title font size
+        axis.text.y = element_text(size = 10),         # Y-axis text font size
+        legend.title = element_text(size = 12),        # Legend title font size
+        legend.text = element_text(size = 10))+
+  guides(color = guide_legend(override.aes = list(size = 3, alpha = 1))) +
+  facet_wrap(~Chromosome, scale = "free_x", ncol = 11)
+
+g_corr_95_flare7 +  labs(y = "Local Ancestry Counts Correlation (FLARE7)")
+```

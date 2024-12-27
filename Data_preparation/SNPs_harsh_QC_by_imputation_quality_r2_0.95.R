@@ -11,7 +11,7 @@ flare3_precentage <- c()
 flare7_precentage <- c()
 
 # iterate through all chromosomes to filter out SNPs with MAF < 0.005 and keep
-# the SNPs with high imputation quality R2 >= 0.8
+# the SNPs with high imputation quality R2 >= 0.95
 for(i in 22:1){
   print(paste0("working on chromosome ", i))
   imputation_info <- read.table(paste0("R:\\Sofer Lab\\HCHS_SOL\\2024_FLARE_3pop/MEGA_HCHS_SOL.chr", 
@@ -26,12 +26,12 @@ for(i in 22:1){
                                                            "rsID")) 
   imputation_splitted <- imputation_splitted |> 
     mutate(R2 = as.numeric(gsub(".*=", "", R2))) |>
-    filter(R2 >= 0.8) |>
+    filter(R2 >= 0.95) |>
     mutate(maf = as.numeric(gsub(".*=", "", maf)))|>
     filter(maf >= 0.005)
-
   
- #  match with FLARE3 and FLARE7 SNP info
+  
+  #  match with FLARE3 and FLARE7 SNP info
   flare3 <- read.table(paste0("R:\\Sofer Lab\\HCHS_SOL\\2024_FLARE_3pop/SOL_",
                               i, ".short.snp Iris Broce.txt")) |>
     select(V1, V2, V3)
@@ -42,7 +42,7 @@ for(i in 22:1){
   flare3_precentage  <- c(flare3_precentage,
                           (nrow(flare3_filtered)/nrow(flare3)))
   saveRDS(flare3_filtered,
-          file = paste0("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_chr",
+          file = paste0("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_r.95_chr",
                         i, ".rds"))
   
   
@@ -53,7 +53,7 @@ for(i in 22:1){
   flare7_precentage  <- c(flare7_precentage, nrow(flare7_filtered)/nrow(flare7_bychr))
   
   saveRDS(flare7_filtered, 
-          file = paste0("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_SNPs_filtered_chr", 
+          file = paste0("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_SNPs_filtered_r.95_chr", 
                         i, ".rds"))
   
 }
@@ -64,7 +64,7 @@ combine_snpinfo <-  function(flare_version){
   combined_file  <- c()
   for(i in 1:22){
     snp_file <- readRDS(paste0("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE",
-    flare_version, "/FLARE", flare_version, "_SNPs_filtered_chr", 
+                               flare_version, "/FLARE", flare_version, "_SNPs_filtered_r.95_chr", 
                                i, ".rds"))
     
     combined_file  <- rbind(combined_file, snp_file)
@@ -73,23 +73,16 @@ combine_snpinfo <-  function(flare_version){
   return(as.data.frame(combined_file))
 }
 
-combined_flare3 <-  combine_snpinfo(3) # 3610937 SNPs
-combined_flare7 <-  combine_snpinfo(7) # 5091756 SNPs
+combined_flare3 <-  combine_snpinfo(3) 
+combined_flare7 <-  combine_snpinfo(7) 
 
 # Save the combined files
-saveRDS(combined_flare3, file  =  "R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_combined.rds")
-saveRDS(combined_flare7, file  =  "R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_SNPs_filtered_combined.rds")
+saveRDS(combined_flare3, file  =  "R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_r.95_combined.rds")
+saveRDS(combined_flare7, file  =  "R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/FLARE7_SNPs_filtered_r.95_combined.rds")
 
 
-# Compute the average and sd after filtering the SNPs based on MAF > 0.005 and R2 >= 0.8.
+# Compute the average and sd after filtering the SNPs based on MAF > 0.005 and R2 >= 0.95.
 mean(flare3_precentage) 
 sd(flare3_precentage) 
 mean(flare7_precentage) 
 sd(flare7_precentage) 
-
-# Save the QC SNP percentage in rds files
-saveRDS(flare3_precentage, 
-file =  "R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/flare3_filtered_precentage.rds")
-
-saveRDS(flare7_precentage, 
-        file =  "R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/FLARE7/flare7_filtered_precentage.rds")
