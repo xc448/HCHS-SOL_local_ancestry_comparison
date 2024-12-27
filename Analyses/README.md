@@ -1,8 +1,5 @@
 ## Analyses conducted
 
-**SNPs_QC_by_imputation_quality.R**:
-Quality control (QC) by imputation quality and MAF for FLARE3 and FLARE7 gds files
-
 **Correlation+ancestry_mean_var_proportion_FLARE3_RFMix.R**
 **Combine_results_correlations_FLARE3_RFMix.R**
 - Local ancestry correlation computation between FLARE3 and RFMix + computing mean & variance of the ancestry proportions
