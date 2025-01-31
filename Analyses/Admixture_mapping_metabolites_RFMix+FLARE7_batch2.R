@@ -178,9 +178,10 @@ oldind <- oldind[oldind[,1] %in% tmp2,] # keep the ones in the tmp2, still ascen
 # define the nullmod function
 nullmod <- function(outcome, covdat, kinmatrix, hhmatrix, blockmatrix){
   covMatList <- list(HH = hhmatrix, kinship = kinmatrix, block = blockmatrix)
-  x <- cbind(covariate_b2[as.character(tmp2), outcome], covdat)
+  x <- cbind(covariate_b1[as.character(tmp), outcome], covdat)
   colnames(x)[1] <- outcome
   mod <- fitNullModel(x = x, outcome = outcome, 
+                      covars=c("AGE","GENDER","EV1","EV2","EV3","EV4","EV5","gengrp6", "GFRSCYS", "CENTER"),
                       cov.mat = covMatList, 
                       verbose = TRUE)
   return(mod)
@@ -203,10 +204,10 @@ nullmod_b2_x8914 <- nullmod("X100008914", x_b2, kin.mat_b2, hh.matrix_b2,
                             block.matrix_b2)
 
 # Saving all the null models
-save(nullmod_b2_x1114, file = "nullmod_b2_x1114.Rdata")
-save(nullmod_b2_x1266, file = "nullmod_b2_x1266.Rdata")
-save(nullmod_b2_x18990, file = "nullmod_b2_x18990.Rdata")
-save(nullmod_b2_x18914, file = "nullmod_b2_x18914.Rdata")
+save(nullmod_b2_x1114, file = "nullmod_b2_x1114_fixed.Rdata")
+save(nullmod_b2_x1266, file = "nullmod_b2_x1266_fixed.Rdata")
+save(nullmod_b2_x18990, file = "nullmod_b2_x18990_fixed.Rdata")
+save(nullmod_b2_x18914, file = "nullmod_b2_x18914_fixed.Rdata")
 
 runassoc <- function(ancestry, gdsfile, nullmod, inference = "old"){
   gds.reader <- GdsGenotypeReader(gdsfile, 

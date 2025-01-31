@@ -61,16 +61,17 @@ nullmod <- function(outcome, covdat, kinmatrix, hhmatrix, blockmatrix){
   covMatList <- list(HH = hhmatrix, kinship = kinmatrix, block = blockmatrix)
   x <- cbind(covariate_b1[as.character(tmp), outcome], covdat)
   colnames(x)[1] <- outcome
-  mod <- fitNullModel(x = x, outcome = outcome,  cov.mat = covMatList)
+  mod <- fitNullModel(x = x, outcome = outcome, 
+                      covars=c("AGE","GENDER","EV1","EV2","EV3","EV4","EV5","gengrp6", "GFRSCYS", "CENTER"),
+                      cov.mat = covMatList)
   return(mod)
 }
-
 # Metabolite propyl 4-hydroxybenzoate sulfate - for chromosome 16, 100006264 
 nullmod_b1_x6264 <- nullmod("X100006264", x_b1, kin.mat_b1, hh.matrix_b1, block.matrix_b1)
 
 
 # Save the null model
-save(nullmod_b1_x6264, file = "./admix_map_all/nullmod_b1_x6264.Rdata")
+save(nullmod_b1_x6264, file = "./admix_map_all/admixmap_low_corr/nullmod_b1_x6264.Rdata")
 
 # open the gds file for RFMix 
 gds_old_b1 <- openfn.gds("./uwgds_b1_subset_37", readonly = FALSE) # This would also have 3861 individuals
@@ -138,7 +139,7 @@ runassoc_flare3 <- function(ancestry, nullmod, metab, from, to){
     res <- GENESIS:::testGenoSingleVar(nullmod, t(geno))
     res <- cbind(snppos, res)
     save(res, file = paste0("./admix_map_all/admixmap_low_corr/", metab, "FLARE3_", 
-                            ancestry ,"_b1_chr", i, ".Rdata"))
+                            ancestry ,"_b1_fixed_chr", i, ".Rdata"))
     gc()
   }
 }
@@ -177,7 +178,7 @@ runassoc_flare7 <- function(ancestry, from, to, nullmod, metab){
     res <- GENESIS:::testGenoSingleVar(nullmod, t(geno))
     res <- cbind(snppos, res)
     save(res, file = paste0("./admix_map_all/admixmap_low_corr/", metab, "FLARE7_", 
-                            ancestry ,"_b1_chr", i, ".Rdata"))
+                            ancestry ,"_b1_fixed_chr", i, ".Rdata"))
     gc()
   }
 }
@@ -202,8 +203,8 @@ runassoc_flare7("amer", from = 16, to = 16, nullmod = nullmod_b1_x6264,
 
 
 # Save RFMix admixture mapping results from batch 1:
-saveRDS(res_afr_x6264, file = "./admix_map_all/admixmap_low_corr/RFMix_res_afr_x6264_b1.rds")
-saveRDS(res_amer_x6264, file = "./admix_map_all/admixmap_low_corr/RFMix_res_amer_x6264_b1.rds")
+saveRDS(res_afr_x6264, file = "./admix_map_all/admixmap_low_corr/RFMix_res_afr_x6264_b1_fixed.rds")
+saveRDS(res_amer_x6264, file = "./admix_map_all/admixmap_low_corr/RFMix_res_amer_x6264_b1_fixed.rds")
 
 
 #######################BATCH 2#############################
@@ -247,16 +248,19 @@ nullmod <- function(outcome, covdat, kinmatrix, hhmatrix, blockmatrix){
   covMatList <- list(HH = hhmatrix, kinship = kinmatrix, block = blockmatrix)
   x <- cbind(covariate_b2[as.character(tmp2), outcome], covdat)
   colnames(x)[1] <- outcome
-  mod <- fitNullModel(x = x, outcome = outcome,  cov.mat = covMatList)
+  mod <- fitNullModel(x = x, outcome = outcome,
+                      covars=c("AGE","GENDER","EV1","EV2","EV3","EV4","EV5","gengrp6", "GFRSCYS", "CENTER"),
+                      cov.mat = covMatList)
   return(mod)
 }
+
 
 # Metabolite propyl 4-hydroxybenzoate sulfate - for chromosome 16, 100006264 
 nullmod_b2_x6264 <- nullmod("X100006264", x_b2, kin.mat_b2, hh.matrix_b2, block.matrix_b2)
 
 
 # Save the null model
-save(nullmod_b2_x6264, file = "./admix_map_all/nullmod_b2_x6264.Rdata")
+save(nullmod_b2_x6264, file = "./admix_map_all/admixmap_low_corr/nullmod_b2_x6264.Rdata")
 
 # open the gds file for RFMix 
 gds_old_b2 <- openfn.gds("./uwgds_b2_subset_37", readonly = FALSE) # This would also have 3861 individuals
@@ -329,7 +333,7 @@ runassoc_flare3 <- function(ancestry, nullmod, metab, from, to){
     res <- GENESIS:::testGenoSingleVar(nullmod, t(geno))
     res <- cbind(snppos, res)
     save(res, file = paste0("./admix_map_all/admixmap_low_corr/", metab, "FLARE3_", 
-                            ancestry ,"_b2_chr", i, ".Rdata"))
+                            ancestry ,"_b2_fixed_chr", i, ".Rdata"))
     gc()
   }
 }
@@ -366,7 +370,7 @@ runassoc_flare7 <- function(ancestry, from, to, nullmod, metab){
     res <- GENESIS:::testGenoSingleVar(nullmod, t(geno))
     res <- cbind(snppos, res)
     save(res, file = paste0("./admix_map_all/admixmap_low_corr/", metab, "FLARE7_", 
-                            ancestry ,"_b2_chr", i, ".Rdata"))
+                            ancestry ,"_b2_fixed_chr", i, ".Rdata"))
     gc()
   }
 }
@@ -389,8 +393,5 @@ runassoc_flare7("amer", from = 16, to = 16, nullmod = nullmod_b2_x6264,
                 metab = "x6264")
 
 # Save RFMix admixture mapping results from batch2:
-saveRDS(res_afr_x6264, file = "./admix_map_all/admixmap_low_corr/RFMix_res_afr_x6264_b2.rds")
-saveRDS(res_amer_x6264, file = "./admix_map_all/admixmap_low_corr/RFMix_res_amer_x6264_b2.rds")
-
-
-
+saveRDS(res_afr_x6264, file = "./admix_map_all/admixmap_low_corr/RFMix_res_afr_x6264_b2_fixed.rds")
+saveRDS(res_amer_x6264, file = "./admix_map_all/admixmap_low_corr/RFMix_res_amer_x6264_b2_fixed.rds")

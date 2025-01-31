@@ -20,7 +20,8 @@ intervals_liftover_nodup <- intervals_liftover_nodup |> filter(chr != "chrX") # 
 # arguments: metabolite, ancestry (African or Amerindian), and batch number to
 # locate the RFMix admixture mapping results from the local directory 
 sigRegion_RFMix <- function(metab, ancestry, batch){
-  res_admixmap <- readRDS(paste0("./admix_map_all/RFMix_res_", ancestry, "_", metab, "_b", batch, ".rds"))
+  res_admixmap <- readRDS(paste0("../Code/admix_map_all/admixmap_", metab, "_RFMix/", "RFMix_res_", ancestry,
+                                 "_", metab, "_b", batch, "_fixed.rds"))
   ind <- rownames(res_admixmap[which.min(res_admixmap$Score.pval),])
   sig_region <- cbind(intervals_liftover_nodup[intervals_liftover_nodup$snpid == ind,], res_admixmap[which.min(res_admixmap$Score.pval),])
   return(sig_region)
@@ -32,12 +33,13 @@ chromid <- flare7$chr
 rsID <- flare7$rsID
  
 ### find the most significant variant in FLARE7 results given a genomic region##
-combine_find_variant_FLARE7 <- function(metab, ancestry, batch, rfmix_interval, 
-                                        chr_region, sigsnpb1 = ""){
+combine_find_variant_FLARE7 <- function(metab, ancestry, batch, rfmix_interval,
+                                        chr_region, sigsnpb1 = "",
+                                        from = 1, to = 22){
   res_flare7 <- c()
-  for(i in 1:22){
+  for(i in from:to){
     load(paste0("./admix_map_all/admixmap_", metab, "_all_FLARE7/admix", 
-                ancestry, "_b", batch, "_filtered_chr" , i , ".Rdata"))
+                ancestry, "_b", batch, "_filtered_fixed_chr" , i , ".Rdata"))
     res_flare7 <-  rbind(res_flare7, as.data.frame(cbind(res$snppos, res$Score.pval)))
   }
   res_flare7 <- cbind(chromid, rsID, res_flare7)
@@ -60,12 +62,13 @@ combine_find_variant_FLARE7 <- function(metab, ancestry, batch, rfmix_interval,
 
 ### find the most significant variant in FLARE3 results given a genomic region##
 combine_find_variant_FLARE3 <- function(metab, ancestry, batch, rfmix_interval, 
-                                        chr_region, sigsnpb1 = ""){
+                                        chr_region, sigsnpb1 = "",
+                                        from = 1, to = 22){
   res_flare3 <- c()
   totrows <- 0
-  for(i in 1:22){
+  for(i in from:to){
     load(paste0("./admix_map_all/admixmap_", metab, "_all_FLARE3/admix", ancestry, 
-                "_b", batch, "_filtered_chr" , i , ".Rdata"))
+                "_b", batch, "_filtered_fixed_chr" , i , ".Rdata"))
     pvals <-  as.data.frame(cbind(res$snppos, res$Score.pval))
     
     snpinfo <- readRDS(paste0("/Volumes/Sofer Lab/HCHS_SOL/Projects/2023_local_ancestry_comparison_sol/Data/FLARE3/FLARE3_SNPs_filtered_chr",
@@ -75,8 +78,6 @@ combine_find_variant_FLARE3 <- function(metab, ancestry, batch, rfmix_interval,
     res_flare3 <- rbind(res_flare3, cbind(chromid_flare3, rsid_flare3, pvals))
     totrows <- totrows + nrow(snpinfo)
   }
-  print(dim(res_flare3))
-  print(totrows)
   colnames(res_flare3) <- c("chr", "rsID", "snppos", "Score.pval")
   saveRDS(res_flare3, paste0("./admix_map_all/admixmap_", metab,
                              "_all_FLARE3/admix", ancestry, "_filtered_b", batch, "_combined.rds"))
@@ -94,18 +95,24 @@ combine_find_variant_FLARE3 <- function(metab, ancestry, batch, rfmix_interval,
 # Helper function to create rows for the table, which includes the genomic 
 # regions where the most significant ancestral difference was observed in RFMix,
 # the most significant variant rsID and p-value in that genomic region for FLARE3 and FLARE7 results
-createRows <- function(metab, ancestry, chr_region){
+createRows <- function(metab, ancestry, chr_region, from = 1, to = 22){
   row <- c()
   for(i in 1:2){
     rfmix_interval <-sigRegion_RFMix(metab, ancestry, i)
     if(i == 1){
-      sigFLARE7 <- combine_find_variant_FLARE7(metab, ancestry, i, rfmix_interval, chr_region)
-      sigFLARE3 <- combine_find_variant_FLARE3(metab, ancestry, i, rfmix_interval, chr_region)
+      sigFLARE7 <- combine_find_variant_FLARE7(metab, ancestry, i, 
+                                               rfmix_interval, chr_region,
+                                               from = from, to = to)
+      sigFLARE3 <- combine_find_variant_FLARE3(metab, ancestry, i, 
+                                               rfmix_interval, chr_region,
+                                               from = from, to = to)
     } else {
       sigFLARE3 <- combine_find_variant_FLARE3(metab, ancestry, i, rfmix_interval, 
-                                               chr_region, row[1,2])
+                                               chr_region, row[1,2],
+                                               from = from, to = to)
       sigFLARE7 <- combine_find_variant_FLARE7(metab, ancestry, i, rfmix_interval, 
-                                               chr_region, row[1,4])
+                                               chr_region, row[1,4],
+                                               from = from, to = to)
       
     }
     row <- cbind(row, cbind(rfmix_interval$Score.pval, sigFLARE3$rsID, 
@@ -118,7 +125,6 @@ createRows <- function(metab, ancestry, chr_region){
 }
 
 # The genomic regions were obtained from the UCSC genome brower
-x1114_afr <- createRows("x1114","afr", c(33800001, 38400000)) # chr5(p13.2)
 x1114_amer <- createRows("x1114","amer", c(33800001, 38400000)) # chr5(p13.2)
 x1266_afr <- createRows("x1266","afr", c(71300001, 73300000)) # chr2(p13.2)
 x8990_amer <- createRows("x8990","amer", c(52600001, 58800000)) # chr15(q21.3)
@@ -128,12 +134,13 @@ x8914_amer <- createRows("x8914","amer", c(60100001, 61900000)) # chr11(q12.2)
 
 ## Make the final table by adjusting notations and variables to include ########
 final_table <- c()
-metab <- c(rep("3-aminoisobutyrate",2), "N-acetylarginine", "PE 16:0/20:4",  rep("PC 16:0/20:4",2 ))
-ancestry <- rep(c("African", "Amerindian"), 3)
-region <- c(rep("chr5(p13.2)",2), "chr2(p13.2)", "chr15(q21.3)",  rep("chr11(q12.2)", 2)) 
-final_table  <- as.data.frame(cbind(metab, ancestry, region, rbind(x1114_afr, x1114_amer, 
-                                                     x1266_afr,  x8990_amer,
-                                                     x8914_afr, x8914_amer)))
+metab <- c("N-acetylarginine", "3-aminoisobutyrate", rep("PC 16:0/20:4",2 ), "PE 16:0/20:4")
+ancestry <- c("African",  "Amerindian",  "African", "Amerindian", "Amerindian")
+region <- c("chr2(p13.2)", "chr5(p13.2)", rep("chr11(q12.2)", 2), "chr15(q21.3)") 
+final_table  <- as.data.frame(cbind(metab, ancestry, region, 
+                                    rbind( x1266_afr, x1114_amer,
+                                           x8914_afr, x8914_amer,
+                                           x8990_amer)))
 
 
 final_table[, c(4,6,8,9,11,13)] <- apply(final_table[, c(4,6,8,9,11,13)], 

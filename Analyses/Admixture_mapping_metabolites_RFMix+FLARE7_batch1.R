@@ -167,15 +167,14 @@ gds_old_b1 <- openfn.gds("./uwgds_b1_subset_37", readonly = FALSE) # This would 
 # first fit the models under the null hypothesis of no genetic ancestry effect 
 # while including multiple random (pairwise kinship coefficients, household, and census block group) 
 # and fixed (age, sex, eGFR, recruitment center, genetic analysis group, and the first five PCs) effects.
-
 nullmod <- function(outcome, covdat, kinmatrix, hhmatrix, blockmatrix){
   covMatList <- list(HH = hhmatrix, kinship = kinmatrix, block = blockmatrix)
-  print("1")
   x <- cbind(covariate_b1[as.character(tmp), outcome], covdat)
   colnames(x)[1] <- outcome
   mod <- fitNullModel(x = x, outcome = outcome, 
+                      covars=c("AGE","GENDER","EV1","EV2","EV3","EV4","EV5","gengrp6", "GFRSCYS", "CENTER"),
                       cov.mat = covMatList, 
-                         verbose = TRUE)
+                      verbose = TRUE)
   return(mod)
 }
 
@@ -192,10 +191,10 @@ nullmod_b1_x8990 <- nullmod("X100008990", x_b1, kin.mat_b1, hh.matrix_b1, block.
 nullmod_b1_x8914 <- nullmod("X100008914", x_b1, kin.mat_b1, hh.matrix_b1, block.matrix_b1)
 
 # Saving all the null models
-save(nullmod_b1_x1114, file = "nullmod_b1_x1114.Rdata")
-save(nullmod_b1_x1266, file = "nullmod_b1_x1266.Rdata")
-save(nullmod_b1_x18990, file = "nullmod_b1_x18990.Rdata")
-save(nullmod_b1_x18914, file = "nullmod_b1_x18914.Rdata")
+save(nullmod_b1_x1114, file = "nullmod_b1_x1114_fixed.Rdata")
+save(nullmod_b1_x1266, file = "nullmod_b1_x1266_fixed.Rdata")
+save(nullmod_b1_x8990, file = "nullmod_b1_x8990_fixed.Rdata")
+save(nullmod_b1_x8914, file = "nullmod_b1_x8914_fixed.Rdata")
 
 # runassoc function for RFMix gds file
 runassoc <- function(ancestry, gdsfile, nullmod, inference = "old"){
@@ -241,7 +240,8 @@ save(scanAnnot_flare, file = "scanAnnot_b1_admixmap.Rdata")
 # to: ending chromosome to do admixture mapping in a for-loop
 # nullmod: the nulllmod to be used in admixture mapping computed above 
 # metab: the metabolites (outcome) to be tested for
-runassoc_flare <- function(ancestry, from=22, to=1, nullmod, metab){
+# ancestry takes abbreviations such as "afr", "amer", or "eur"
+runassoc_flare <- function(ancestry, from, to, nullmod, metab){
   for(i in seq(from=from, to = to) ){
     print(paste0("working on chromosome", i))
     gdsflare_b1 <- openfn.gds("R:\\Sofer Lab\\HCHS_SOL\\Projects\\2023_local_ancestry_comparison_sol\\Data\\FLARE7_admixmap/flare_b1_all.gds")
@@ -270,7 +270,7 @@ runassoc_flare <- function(ancestry, from=22, to=1, nullmod, metab){
     res <- GENESIS:::testGenoSingleVar(nullmod, t(geno))
     res <- cbind(snppos, res)
     save(res, file = paste0("./admix_map_all/admixmap_", metab, "_all_FLARE7/admix", 
-                            ancestry ,"_b1_filtered_chr", i, ".Rdata"))
+                            ancestry ,"_b1_filtered_fixed_chr", i, ".Rdata"))
     gc()
   }
 }
@@ -294,7 +294,7 @@ res_afr_x1266 <-  runassoc("afr", gds_old_b1,
 res_amer_x1266 <- runassoc("amer", gds_old_b1, 
                            nullmod_b1_x1266) #RFMix, amer ancestry
 
-runassoc_flare("afr", from = 3, to = 1, nullmod = nullmod_b1_x1266, 
+runassoc_flare("afr", from = 22, to = 1, nullmod = nullmod_b1_x1266, 
                metab = "x1266") #FLARE7, afr ancestry
 runassoc_flare("amer", from = 22, to = 1, nullmod = nullmod_b1_x1266,
                metab = "x1266") #FLARE7, amer ancestry
@@ -328,11 +328,11 @@ runassoc_flare("amer", from = 22, to = 1, nullmod = nullmod_b1_x8914,
 
 ###########Save the old fitted results from the old (RFMix) inference  #########
 
-save(res_afr_x1114, file  =  "res_afr_x1114_b1.Rdata")
-save(res_amer_x1114, file  =  "res_amer_x1114_b1.Rdata")
-save(res_afr_x1266, file  =  "res_afr_x1266_b1.Rdata")
-save(res_amer_x1266, file  =  "res_amer_x1266_b1.Rdata")
-save(res_afr_x8914, file  =  "res_afr_x8914_b1.Rdata")
-save(res_amer_x8914, file  =  "res_amer_x8914_b1.Rdata")
-save(res_afr_x8990, file  =  "res_afr_x8990_b1.Rdata")
-save(res_amer_x8990, file  =  "res_amer_x8990_b1.Rdata")
+save(res_afr_x1114, file  =  "RFMix_res_afr_x1114_b1_fixed.Rdata")
+save(res_amer_x1114, file  =  "RFMix_res_amer_x1114_b1_fixed.Rdata")
+save(res_afr_x1266, file  =  "RFMix_res_afr_x1266_b1_fixed.Rdata")
+save(res_amer_x1266, file  =  "RFMix_res_amer_x1266_b1_fixed.Rdata")
+save(res_afr_x8914, file  =  "RFMix_res_afr_x8914_b1_fixed.Rdata")
+save(res_amer_x8914, file  =  "RFMix_res_amer_x8914_b1_fixed.Rdata")
+save(res_afr_x8990, file  =  "RFMix_res_afr_x8990_b1_fixed.Rdata")
+save(res_amer_x8990, file  =  "RFMix_res_amer_x8990_b1_fixed.Rdata")

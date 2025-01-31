@@ -32,8 +32,8 @@ intervals_liftover_nodup <- intervals_liftover_nodup |> filter(chr != "chrX") # 
 ```{r}
 plot_overlay_pval <- function(metab, batch, ancestry, chr){
   # Load the RFMix admixmap results 
-  res_RFMix <- readRDS(paste0("./admix_map_all/RFMix_res_", ancestry,
-  "_", metab, "_b", batch, ".rds"))
+  res_RFMix <- readRDS(paste0("./admix_map_all/admixmap_", metab, "_RFMix/", "RFMix_res_", ancestry,
+  "_", metab, "_b", batch, "_fixed.rds"))
   res_RFMix_plot <- cbind(intervals_liftover_nodup$chr, 
                           intervals_liftover_nodup$pos_start,
                           intervals_liftover_nodup$pos_end,
@@ -44,7 +44,7 @@ plot_overlay_pval <- function(metab, batch, ancestry, chr){
                                            names_to = "poscat", values_to = "pos")
   # Load the FLAREs3 admixmap results
   load(paste0("./admix_map_all/admixmap_", metab, "_all_FLARE3/admix", ancestry,
-              "_b", batch, "_filtered_chr", chr, ".Rdata"))
+              "_b", batch, "_filtered_fixed_chr", chr, ".Rdata"))
   
   # Start plotting
   # determine colors based on the ancestry given in the argument
@@ -113,16 +113,6 @@ combine_plots  <- function(gafr_b1, gafr_b2, gamer_b1, gamer_b2,  title){
 ```
 
 *Panel (A)*
-Generate plots for 3-Aminoisobutyrate at chromosome 5, for both batches in FLARE3
-```{r}
-combine_plots(plot_overlay_pval("x1114", 1, "afr", 5), 
-              plot_overlay_pval("x1114", 2, "afr", 5),
-              plot_overlay_pval("x1114", 1, "amer", 5),
-              plot_overlay_pval("x1114", 2, "amer", 5),
-              "3-Aminoisobutyrate Chr5")
-```
-
-*Panel (B)*
 Generate plots for N-acetylarginine at chromosome 2, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x1266", 1, "afr", 2), 
@@ -132,7 +122,27 @@ combine_plots(plot_overlay_pval("x1266", 1, "afr", 2),
               "N-acetylarginine Chr2")
 ```
 
+*Panel (B)*
+Generate plots for 3-Aminoisobutyrate at chromosome 5, for both batches in FLARE3
+```{r}
+combine_plots(plot_overlay_pval("x1114", 1, "afr", 5), 
+              plot_overlay_pval("x1114", 2, "afr", 5),
+              plot_overlay_pval("x1114", 1, "amer", 5),
+              plot_overlay_pval("x1114", 2, "amer", 5),
+              "3-Aminoisobutyrate Chr5")
+```
+
 *Panel (C)*
+Generate plots for PC 16:0/20:4 at chromosome 11, for both batches in FLARE3
+```{r}
+combine_plots(plot_overlay_pval("x8914", 1, "afr", 11), 
+              plot_overlay_pval("x8914", 2, "afr", 11),
+              plot_overlay_pval("x8914", 1, "amer", 11),
+              plot_overlay_pval("x8914", 2, "amer", 11),
+              "PC 16:0/20:4 Chr11")
+```
+
+*Panel (D)*
 Generate plots for PE 16:0/20:4 at chromosome 15, for both batches in FLARE3
 ```{r}
 combine_plots(plot_overlay_pval("x8990", 1, "afr", 15), 
@@ -142,12 +152,4 @@ combine_plots(plot_overlay_pval("x8990", 1, "afr", 15),
               "PE 16:0/20:4 Chr15")
 ```
 
-*Panel (D)*
-Generate plots for PC 16:0/20:4 at chromosome 11, for both batches in FLARE3
-```{r}
-combine_plots(plot_overlay_pval("x8914", 1, "afr", 11), 
-              plot_overlay_pval("x8914", 2, "afr", 11),
-              plot_overlay_pval("x8914", 1, "amer", 11),
-              plot_overlay_pval("x8914", 2, "amer", 11),
-              "PC 16:0/20:4 Chr11")
-```
+`

@@ -6,8 +6,6 @@ library(SNPRelate)
 library(GWASTools)
 library(data.table)
 
-source("../Code/20240802_STEAM_customized_corrfunc.R")
-
 ############### RFMix ##################
 # Load genetic map of RFMix on hg38 build
 RFMix_map <- readRDS("R:\\Sofer Lab\\HCHS_SOL\\Projects/2023_local_ancestry_comparison_sol/Data/RFMix_gds_by_chr/genetic_dist_RFMix.rds")

@@ -14,19 +14,18 @@ load("./admix_map_all/flare_batch2_SoLids.Rdata")
 
 ################ Admixture mapping analysis starts  here ####################
 #  Load null models 
-load("./admix_map_all/nullmod_b2_x1114.Rdata")
-load("./admix_map_all/nullmod_b2_x1266.Rdata")
-load("./admix_map_all/nullmod_b2_x8990.Rdata")
-load("./admix_map_all/nullmod_b2_x8914.Rdata")
+load("nullmod_b2_x1114_fixed.Rdata")
+load("nullmod_b2_x1266_fixed.Rdata")
+load("nullmod_b2_x8990_fixed.Rdata")
+load("nullmod_b2_x8914_fixed.Rdata")
 
 # FLARE scan annotation 
 scanAnnot_flare <- ScanAnnotationDataFrame(data.frame(
   scanID=flareid, stringsAsFactors=FALSE)) 
 
-
 # ancestry takes abbreviations such as "afr", "amer", or "eur"
-runassoc_flare <- function(ancestry, nullmod, metab){
-  for(i in 22:1 ){
+runassoc_flare <- function(ancestry, nullmod, metab, from = 22, to = 1){
+  for(i in from:to){
     print(paste0("working on chromosome", i))
     filtered_gds <- openfn.gds(paste0("R:\\Sofer Lab\\HCHS_SOL\\Projects\\2023_local_ancestry_comparison_sol\\Data\\FLARE3/FLARE3_SNPs_filtered_chr", 
                                       i, ".gds" ))
@@ -48,7 +47,7 @@ runassoc_flare <- function(ancestry, nullmod, metab){
     res <- GENESIS:::testGenoSingleVar(nullmod, t(geno))
     res <- cbind(snppos, res)
     save(res, file = paste0("./admix_map_all/admixmap_", metab, "_all_FLARE3/admix", 
-                            ancestry ,"_b2_filtered_chr", i, ".Rdata"))
+                            ancestry ,"_b2_filtered_fixed_chr", i, ".Rdata"))
     gc()
   }
 }

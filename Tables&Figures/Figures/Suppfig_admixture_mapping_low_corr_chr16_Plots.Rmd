@@ -38,8 +38,8 @@ intervals_liftover_nodup <- intervals_liftover_nodup |> filter(chr != "chrX") # 
 ```{r}
 plot_overlay_pval <- function(metab, batch, ancestry, chr, inference){
   # Load the RFMix admixmap results 
-  res_RFMix <- readRDS(paste0("./admix_map_all/admixmap_low_corr/RFMix_res_", ancestry,
-  "_", metab, "_b", batch, ".rds"))
+  res_RFMix <- readRDS(paste0("../../../Code/admix_map_all/admixmap_low_corr/RFMix_res_", ancestry,
+  "_", metab, "_b", batch, "_fixed.rds"))
   res_RFMix_plot <- cbind(intervals_liftover_nodup$chr, 
                           intervals_liftover_nodup$pos_start,
                           intervals_liftover_nodup$pos_end,
@@ -49,7 +49,7 @@ plot_overlay_pval <- function(metab, batch, ancestry, chr, inference){
                                            cols = c("pos.start", "pos.end"), 
                                            names_to = "poscat", values_to = "pos")
   # Load the FLAREs3 admixmap results
-  load(paste0("./admix_map_all/admixmap_low_corr/", metab, inference, "_", ancestry, "_b", batch, "_chr", chr, ".Rdata"))
+  load(paste0("../../../Code/admix_map_all/admixmap_low_corr/", metab, inference, "_", ancestry, "_b", batch, "_fixed_chr", chr, ".Rdata"))
   
   
   # Start plotting
